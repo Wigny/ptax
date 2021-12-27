@@ -7,24 +7,13 @@ defmodule PTAX.Requests do
   plug Tesla.Middleware.PathParams
   plug Tesla.Middleware.JSON
 
+  @spec moedas :: Tesla.Env.result()
   def moedas() do
     get("/Moedas", query: @query)
   end
 
-  def cotacao(moeda \\ "USD", data \\ DateTime.now!("America/Sao_Paulo")) do
-    params = [moeda: moeda, data: Calendar.strftime(data, "%m-%d-%Y")]
-
-    get("/CotacaoMoedaDia(moeda=':moeda',dataCotacao=':data')",
-      opts: [path_params: params],
-      query: @query
-    )
-  end
-
-  def cotacaoFechamento(
-        moeda \\ "USD",
-        dataInicial \\ DateTime.now!("America/Sao_Paulo"),
-        dataFinal \\ DateTime.now!("America/Sao_Paulo")
-      ) do
+  @spec cotacaoFechamento(binary, Date.t(), Date.t()) :: Tesla.Env.result()
+  def cotacaoFechamento(moeda, dataInicial, dataFinal) do
     params = [
       moeda: moeda,
       dataInicial: Calendar.strftime(dataInicial, "%m-%d-%Y"),

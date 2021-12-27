@@ -13,15 +13,21 @@ defmodule PTAX.Moeda do
     field :tipo, Tipo.t()
   end
 
+  @spec list :: {:ok, list(__MODULE__.t())} | {:error, term}
   def list do
-    {:ok, %{body: body}} = PTAX.Requests.moedas()
+    with {:ok, %{body: body}} <- PTAX.Requests.moedas() do
+      result = Enum.map(body["value"], &parse/1)
 
-    Enum.map(body["value"], fn value ->
-      struct!(__MODULE__, %{
-        nome: value["nomeFormatado"],
-        simbolo: value["simbolo"],
-        tipo: Tipo.from(value["tipoMoeda"])
-      })
-    end)
+      {:ok, result}
+    else
+      {:ok, _env} -> {:error, :unknown}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp parse(%{"nomeFormatado" => nome, "simbolo" => simbolo, "tipoMoeda" => tipo}) do
+    params = %{nome: nome, simbolo: simbolo, tipo: Tipo.from(tipo)}
+
+    struct!(__MODULE__, params)
   end
 end
