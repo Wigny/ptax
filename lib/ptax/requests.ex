@@ -1,10 +1,11 @@
 defmodule PTAX.Requests do
-  use Tesla
+  use Tesla, only: [:get], docs: false
 
   @query ["$format": "json"]
 
   plug Tesla.Middleware.BaseUrl, "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata"
   plug Tesla.Middleware.PathParams
+  plug PTAX.Requests.Case
   plug Tesla.Middleware.JSON
 
   @spec moedas :: Tesla.Env.result()
@@ -12,16 +13,16 @@ defmodule PTAX.Requests do
     get("/Moedas", query: @query)
   end
 
-  @spec cotacaoFechamento(binary, Date.t(), Date.t()) :: Tesla.Env.result()
-  def cotacaoFechamento(moeda, dataInicial, dataFinal) do
+  @spec cotacao_fechamento(binary, Date.t(), Date.t()) :: Tesla.Env.result()
+  def cotacao_fechamento(moeda, data_inicial, data_final) do
     params = [
       moeda: moeda,
-      dataInicial: Calendar.strftime(dataInicial, "%m-%d-%Y"),
-      dataFinal: Calendar.strftime(dataFinal, "%m-%d-%Y")
+      data_inicial: Calendar.strftime(data_inicial, "%m-%d-%Y"),
+      data_final: Calendar.strftime(data_final, "%m-%d-%Y")
     ]
 
     get(
-      "/CotacaoMoedaPeriodoFechamento(codigoMoeda=':moeda',dataInicialCotacao=':dataInicial',dataFinalCotacao=':dataFinal')",
+      "/CotacaoMoedaPeriodoFechamento(codigoMoeda=':moeda',dataInicialCotacao=':data_inicial',dataFinalCotacao=':data_final')",
       opts: [path_params: params],
       query: @query
     )

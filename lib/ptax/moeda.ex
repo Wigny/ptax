@@ -25,7 +25,7 @@ defmodule PTAX.Moeda do
     end
   end
 
-  defp parse(%{"nomeFormatado" => nome, "simbolo" => simbolo, "tipoMoeda" => tipo}) do
+  defp parse(%{"nome_formatado" => nome, "simbolo" => simbolo, "tipo_moeda" => tipo}) do
     params = %{nome: nome, simbolo: simbolo, tipo: Tipo.from(tipo)}
 
     struct!(__MODULE__, params)

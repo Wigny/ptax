@@ -27,7 +27,8 @@ defmodule PTAX.MixProject do
       {:typed_struct, "~> 0.2.1"},
       {:enum_type, "~> 1.1"},
       {:tzdata, "~> 1.1"},
-      {:decimal, "~> 2.0"}
+      {:decimal, "~> 2.0"},
+      {:casex, "~> 0.4.2"}
     ]
   end
 end

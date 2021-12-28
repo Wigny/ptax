@@ -17,7 +17,7 @@ defmodule PTAX.Cotacao do
 
   @spec get(binary, Date.t()) :: {:ok, __MODULE__.t()} | {:error, term}
   def get(moeda, data) do
-    with {:ok, %{body: body}} <- PTAX.Requests.cotacaoFechamento(moeda, data, data),
+    with {:ok, %{body: body}} <- PTAX.Requests.cotacao_fechamento(moeda, data, data),
          [fechamento | _value] <- body["value"] do
       result = parse(fechamento)
 
@@ -30,10 +30,10 @@ defmodule PTAX.Cotacao do
   end
 
   defp parse(%{
-         "cotacaoCompra" => compra,
-         "cotacaoVenda" => venda,
-         "dataHoraCotacao" => data_hora,
-         "tipoBoletim" => tipo_boletim
+         "cotacao_compra" => compra,
+         "cotacao_venda" => venda,
+         "data_hora_cotacao" => data_hora,
+         "tipo_boletim" => tipo_boletim
        }) do
     params = %{
       compra: Decimal.from_float(compra),
