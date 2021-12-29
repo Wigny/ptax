@@ -1,4 +1,6 @@
 defmodule PTAX.Requests do
+  @moduledoc "Módulo para trabalhar com requests para a API PTAX"
+
   use Tesla, only: [:get], docs: false
 
   @query ["$format": "json"]

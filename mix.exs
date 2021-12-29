@@ -31,7 +31,9 @@ defmodule PTAX.MixProject do
       {:typed_struct, "~> 0.2.1"},
       {:tzdata, "~> 1.1"},
       {:decimal, "~> 2.0"},
-      {:casex, "~> 0.4.2"}
+      {:casex, "~> 0.4.2"},
+      {:ex_doc, "~> 0.26", only: :dev, runtime: false},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
   end
 end

@@ -1,5 +1,5 @@
 defmodule PTAX.Cotacao do
-  @moduledoc "Define a estrutura de uma cotação de uma moeda"
+  @moduledoc "Define a estrutura de cotação de uma moeda"
 
   use TypedStruct
 
@@ -9,8 +9,8 @@ defmodule PTAX.Cotacao do
     field :cotado_em, DateTime.t()
   end
 
-  @doc "Retorna a cotação no fechamento de compra e venda de uma moeda para a data consultada"
-  @spec get(atom, Date.t()) :: {:ok, __MODULE__.t()} | {:error, term}
+  @doc "Retorna a cotação de compra e de venda de uma moeda no fechamento para a data consultada"
+  @spec get(atom, Date.t()) :: {:ok, t} | {:error, term}
   def get(moeda, data) do
     with {:ok, %{body: body}} <- PTAX.Requests.cotacao_fechamento(moeda, data, data),
          %{"value" => [fechamento | _value]} <- body do

@@ -1,4 +1,6 @@
 defmodule PTAX.Requests.Case do
+  @moduledoc "Converte request para camel case e response para snake case"
+
   @behaviour Tesla.Middleware
 
   @impl true
