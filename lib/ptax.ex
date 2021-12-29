@@ -32,7 +32,7 @@ defmodule PTAX do
   end
 
   @doc """
-  Semelhante a `c:converter/2`, mas gera um error se o valor não puder ser convertido.
+  Semelhante a `converter/2`, mas gera um error se o valor não puder ser convertido.
 
   ## Exemplo
 
