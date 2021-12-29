@@ -29,7 +29,6 @@ defmodule PTAX.MixProject do
       {:hackney, "~> 1.18"},
       {:jason, "~> 1.3"},
       {:typed_struct, "~> 0.2.1"},
-      {:enum_type, "~> 1.1"},
       {:tzdata, "~> 1.1"},
       {:decimal, "~> 2.0"},
       {:casex, "~> 0.4.2"}

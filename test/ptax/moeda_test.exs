@@ -14,16 +14,8 @@ defmodule PTAX.MoedaTest do
       assert {:ok, moedas} = Moeda.list()
 
       assert [
-               %Moeda{
-                 nome: "Libra Esterlina",
-                 simbolo: :GBP,
-                 tipo: Moeda.Tipo.B
-               },
-               %Moeda{
-                 nome: "Dólar dos Estados Unidos",
-                 simbolo: :USD,
-                 tipo: Moeda.Tipo.A
-               }
+               %Moeda{nome: "Libra Esterlina", simbolo: :GBP},
+               %Moeda{nome: "Dólar dos Estados Unidos", simbolo: :USD}
              ] == moedas
     end
   end

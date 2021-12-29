@@ -1,18 +1,14 @@
 defmodule PTAX.Moeda do
-  use TypedStruct
-  use EnumType
+  @moduledoc "Define a estrutura de uma moeda"
 
-  defenum Tipo do
-    value A, "A"
-    value B, "B"
-  end
+  use TypedStruct
 
   typedstruct do
     field :nome, String.t()
     field :simbolo, atom(), enforce: true
-    field :tipo, Tipo.t()
   end
 
+  @doc "Retorna a lista de moedas suportadas"
   @spec list :: {:ok, list(__MODULE__.t())} | {:error, term}
   def list do
     with {:ok, %{body: body}} <- PTAX.Requests.moedas(), %{"value" => value} <- body do
@@ -25,8 +21,8 @@ defmodule PTAX.Moeda do
     end
   end
 
-  defp parse(%{"nome_formatado" => nome, "simbolo" => simbolo, "tipo_moeda" => tipo}) do
-    params = %{nome: nome, simbolo: String.to_atom(simbolo), tipo: Tipo.from(tipo)}
+  defp parse(%{"nome_formatado" => nome, "simbolo" => simbolo}) do
+    params = %{nome: nome, simbolo: String.to_atom(simbolo)}
 
     struct!(__MODULE__, params)
   end
