@@ -8,6 +8,8 @@ defmodule PTAX.MixProject do
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
+      description: description(),
+      package: package(),
       deps: deps()
     ]
   end
@@ -34,6 +36,17 @@ defmodule PTAX.MixProject do
       {:casex, "~> 0.4.2"},
       {:ex_doc, "~> 0.26", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  defp description() do
+    "Um conversor de moedas que utiliza a API publica do governo para cotações."
+  end
+
+  defp package() do
+    [
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => "https://github.com/wigny/ptax"}
     ]
   end
 end
