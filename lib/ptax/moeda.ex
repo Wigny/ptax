@@ -9,19 +9,19 @@ defmodule PTAX.Moeda do
 
   typedstruct do
     field :nome, String.t()
-    field :simbolo, String.t(), enforce: true
+    field :simbolo, atom(), enforce: true
     field :tipo, Tipo.t()
   end
 
   @spec list :: {:ok, list(__MODULE__.t())} | {:error, term}
   def list do
-    with {:ok, %{body: body}} <- PTAX.Requests.moedas() do
-      result = Enum.map(body["value"], &parse/1)
+    with {:ok, %{body: body}} <- PTAX.Requests.moedas(), %{"value" => value} <- body do
+      result = Enum.map(value, &parse/1)
 
       {:ok, result}
     else
-      {:ok, _env} -> {:error, :unknown}
       {:error, error} -> {:error, error}
+      _error -> {:error, :unknown}
     end
   end
 

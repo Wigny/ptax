@@ -13,7 +13,7 @@ defmodule PTAX.Requests do
     get("/Moedas", query: @query)
   end
 
-  @spec cotacao_fechamento(binary, Date.t(), Date.t()) :: Tesla.Env.result()
+  @spec cotacao_fechamento(atom, Date.t(), Date.t()) :: Tesla.Env.result()
   def cotacao_fechamento(moeda, data_inicial, data_final) do
     params = [
       moeda: moeda,
