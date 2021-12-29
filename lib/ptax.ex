@@ -14,7 +14,7 @@ defmodule PTAX do
     converter(valor, opts)
   end
 
-  def converter(valor, opts) when opts.operacao in ~w[compra venda]a do
+  def converter(valor, opts) do
     Conversor.run(valor, opts)
   end
 
