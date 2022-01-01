@@ -9,7 +9,7 @@ defmodule PTAX.Requests do
 
   @query ["$format": "json"]
 
-  defguardp is_empty?(value) when length(value) == 0
+  defguardp is_empty?(value) when value == []
   defguardp is_success?(status) when status in 200..299
   defguardp is_error?(status) when status in 500..599
 

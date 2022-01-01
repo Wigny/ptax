@@ -1,6 +1,6 @@
 # PTAX
 
-**TODO: Add description**
+A currency converter that uses the API provided by the Brazilian Open Data Portal to perform quotes
 
 ## Installation
 
@@ -10,7 +10,7 @@ by adding `ptax` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:ptax, "~> 0.1.0"}
+    {:ptax, "~> 0.1.1"}
   ]
 end
 ```
@@ -18,4 +18,3 @@ end
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at <https://hexdocs.pm/ptax>.
-

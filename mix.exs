@@ -4,7 +4,7 @@ defmodule PTAX.MixProject do
   def project do
     [
       app: :ptax,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -14,7 +14,6 @@ defmodule PTAX.MixProject do
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
       extra_applications: [:logger]
@@ -24,7 +23,6 @@ defmodule PTAX.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:tesla, "~> 1.4"},
@@ -40,7 +38,7 @@ defmodule PTAX.MixProject do
   end
 
   defp description() do
-    "Um conversor de moedas que utiliza a API disponibilizada pelo Portal Brasileiro De Dados Abertos para realizar cotações."
+    "A currency converter that uses the API provided by the Brazilian Open Data Portal to perform quotes."
   end
 
   defp package() do
