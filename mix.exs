@@ -40,7 +40,7 @@ defmodule PTAX.MixProject do
   end
 
   defp description() do
-    "Um conversor de moedas que utiliza a API publica do governo para cotações."
+    "Um conversor de moedas que utiliza a API disponibilizada pelo Portal Brasileiro De Dados Abertos para realizar cotações."
   end
 
   defp package() do

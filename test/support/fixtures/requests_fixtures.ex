@@ -3,14 +3,17 @@ defmodule PTAX.RequestsFixtures do
 
   import Tesla.Mock
 
-  def fixture() do
-    mock(&env/1)
+  @base_url "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata"
+
+  def fixture(opts \\ %{}) do
+    mock(&env(&1, opts))
   end
 
-  defp env(%{
-         method: :get,
-         url: "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/Moedas"
-       }) do
+  defp env(%{url: "#{@base_url}/Moedas"}, %{error: :network_error}) do
+    {:error, :nxdomain}
+  end
+
+  defp env(%{url: "#{@base_url}/Moedas"}, _opts) do
     body = %{
       "@odata_context" => "",
       "value" => [
@@ -30,11 +33,13 @@ defmodule PTAX.RequestsFixtures do
     json(body)
   end
 
-  defp env(%{
-         method: :get,
-         url:
-           "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoMoedaPeriodoFechamento(codigoMoeda='GBP',dataInicialCotacao='12-24-2021',dataFinalCotacao='12-24-2021')"
-       }) do
+  defp env(
+         %{
+           url:
+             "#{@base_url}/CotacaoMoedaPeriodoFechamento(codigoMoeda='GBP',dataInicialCotacao='12-24-2021',dataFinalCotacao='12-24-2021')"
+         },
+         _opts
+       ) do
     body = %{
       "@odata_context" => "",
       "value" => [
@@ -50,11 +55,28 @@ defmodule PTAX.RequestsFixtures do
     json(body)
   end
 
-  defp env(%{
-         method: :get,
-         url:
-           "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoMoedaPeriodoFechamento(codigoMoeda='USD',dataInicialCotacao='12-24-2021',dataFinalCotacao='12-24-2021')"
-       }) do
+  defp env(
+         %{
+           url:
+             "#{@base_url}/CotacaoMoedaPeriodoFechamento(codigoMoeda='USD',dataInicialCotacao='12-24-2021',dataFinalCotacao='12-24-2021')"
+         },
+         %{error: :not_found}
+       ) do
+    body = %{
+      "@odata_context" => "",
+      "value" => []
+    }
+
+    json(body)
+  end
+
+  defp env(
+         %{
+           url:
+             "#{@base_url}/CotacaoMoedaPeriodoFechamento(codigoMoeda='USD',dataInicialCotacao='12-24-2021',dataFinalCotacao='12-24-2021')"
+         },
+         _opts
+       ) do
     body = %{
       "@odata_context" => "",
       "value" => [
@@ -70,16 +92,18 @@ defmodule PTAX.RequestsFixtures do
     json(body)
   end
 
-  defp env(%{
-         method: :get,
-         url:
-           "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoMoedaPeriodoFechamento(codigoMoeda='GBPS',dataInicialCotacao='12-24-2021',dataFinalCotacao='12-24-2021')"
-       }) do
+  defp env(
+         %{
+           url:
+             "#{@base_url}/CotacaoMoedaPeriodoFechamento(codigoMoeda='GBPS',dataInicialCotacao='12-24-2021',dataFinalCotacao='12-24-2021')"
+         },
+         _opts
+       ) do
     body = ~s(/*{
       "codigo" : 500,
       "mensagem" : "Erro desconhecido"
     }*/)
 
-    text(body)
+    %Tesla.Env{status: 500, body: body}
   end
 end

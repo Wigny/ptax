@@ -19,7 +19,7 @@ defmodule PTAXTest do
     test "converter!/2 lança erro se passado opções inválidas" do
       opts = [de: :USD, para: :GBPS, data: ~D[2021-12-24]]
 
-      assert_raise RuntimeError, "TODO", fn -> PTAX.converter!("15.45", opts) end
+      assert_raise PTAX.Error, fn -> PTAX.converter!("15.45", opts) end
     end
   end
 end

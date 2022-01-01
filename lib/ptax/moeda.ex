@@ -4,8 +4,8 @@ defmodule PTAX.Moeda do
   use TypedStruct
 
   typedstruct enforce: true do
-    field :nome, String.t()
-    field :simbolo, atom()
+    field :nome, binary
+    field :simbolo, atom
   end
 
   @doc """
@@ -18,13 +18,10 @@ defmodule PTAX.Moeda do
   """
   @spec list :: {:ok, list(t)} | {:error, term}
   def list do
-    with {:ok, %{body: body}} <- PTAX.Requests.moedas(), %{"value" => value} <- body do
+    with {:ok, value} <- PTAX.Requests.moedas() do
       result = Enum.map(value, &parse/1)
 
       {:ok, result}
-    else
-      {:error, error} -> {:error, error}
-      _error -> {:error, :unknown}
     end
   end
 
