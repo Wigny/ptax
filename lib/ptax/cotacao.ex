@@ -29,8 +29,8 @@ defmodule PTAX.Cotacao do
       venda: Decimal.from_float(venda),
       cotado_em:
         cotado_em
-        |> NaiveDateTime.from_iso8601!()
-        |> DateTime.from_naive!("America/Sao_Paulo")
+        |> Timex.parse!("{ISO:Extended}")
+        |> Timex.Timezone.convert("America/Sao_Paulo")
     }
 
     struct!(__MODULE__, params)

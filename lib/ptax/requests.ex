@@ -27,8 +27,8 @@ defmodule PTAX.Requests do
   def cotacao_fechamento(moeda, data_inicial, data_final) do
     params = [
       moeda: moeda,
-      data_inicial: Calendar.strftime(data_inicial, "%m-%d-%Y"),
-      data_final: Calendar.strftime(data_final, "%m-%d-%Y")
+      data_inicial: Timex.format!(data_inicial, "%m-%d-%Y", :strftime),
+      data_final: Timex.format!(data_final, "%m-%d-%Y", :strftime)
     ]
 
     "/CotacaoMoedaPeriodoFechamento(codigoMoeda=':moeda',dataInicialCotacao=':data_inicial',dataFinalCotacao=':data_final')"

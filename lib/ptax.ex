@@ -29,7 +29,7 @@ defmodule PTAX do
         ) :: {:ok, Decimal.t()} | {:error, Error.t()}
 
   def converter(valor, opts) when is_list(opts) do
-    today = "America/Sao_Paulo" |> DateTime.now!() |> DateTime.to_date()
+    today = "America/Sao_Paulo" |> Timex.now() |> Timex.to_date()
     opts = Enum.into(opts, %{data: today, operacao: :venda})
     converter(valor, opts)
   end

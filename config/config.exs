@@ -1,6 +1,5 @@
 import Config
 
-config :tesla, adapter: Tesla.Adapter.Hackney
-config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
+tesla_adapter = if config_env() != :test, do: Tesla.Adapter.Hackney, else: Tesla.Mock
 
-import_config "#{config_env()}.exs"
+config :tesla, adapter: tesla_adapter
