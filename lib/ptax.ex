@@ -3,13 +3,14 @@ defmodule PTAX do
   Agrega funções de listagem e conversão de moedas suportadas
   """
 
-  alias PTAX.{Conversor, Error, Moeda}
+  alias PTAX.{Conversor, Cotacao, Error, Moeda}
 
   @type converter_opts :: [
           de: Conversor.moeda(),
           para: Conversor.moeda(),
           data: Date.t() | nil,
-          operacao: Conversor.operacao() | nil
+          operacao: Conversor.operacao() | nil,
+          tipo_boletim: Cotacao.Boletim.t() | nil
         ]
 
   @spec moedas :: list(Moeda.t()) | {:error, Error.t()}
@@ -20,7 +21,7 @@ defmodule PTAX do
 
   ## Exemplo
 
-      iex> PTAX.converter(5, de: :USD, para: :BRL, data: ~D[2021-12-24], operacao: :compra)
+      iex> PTAX.converter(5, de: :USD, para: :BRL, data: ~D[2021-12-24], operacao: :compra, tipo_boletim: PTAX.Cotacao.Boletim.Fechamento)
       {:ok, #Decimal<28.2705>}
   """
   @spec converter(
@@ -29,8 +30,13 @@ defmodule PTAX do
         ) :: {:ok, Decimal.t()} | {:error, Error.t()}
 
   def converter(valor, opts) when is_list(opts) do
-    today = "America/Sao_Paulo" |> Timex.now() |> Timex.to_date()
-    opts = Enum.into(opts, %{data: today, operacao: :venda})
+    default_opts = %{
+      data: "America/Sao_Paulo" |> Timex.now() |> Timex.to_date(),
+      operacao: :venda,
+      tipo_boletim: Cotacao.Boletim.Fechamento
+    }
+
+    opts = Enum.into(opts, default_opts)
     converter(valor, opts)
   end
 
@@ -43,7 +49,7 @@ defmodule PTAX do
 
   ## Exemplo
 
-      iex> PTAX.converter!(5, de: :USD, para: :BRL, data: ~D[2021-12-24], operacao: :compra)
+      iex> PTAX.converter!(5, de: :USD, para: :BRL, data: ~D[2021-12-24], operacao: :compra, tipo_boletim: PTAX.Cotacao.Boletim.Fechamento)
       #Decimal<28.2705>
   """
   @spec converter!(

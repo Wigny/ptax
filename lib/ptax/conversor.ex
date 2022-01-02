@@ -7,7 +7,13 @@ defmodule PTAX.Conversor do
   @type moeda :: atom
   @type operacao :: :compra | :venda
 
-  @type opts :: %{de: moeda, para: moeda, data: Date.t(), operacao: operacao}
+  @type opts :: %{
+          de: moeda,
+          para: moeda,
+          data: Date.t(),
+          operacao: operacao,
+          tipo_boletim: Cotacao.Boletim.t()
+        }
 
   defguardp valid_operation?(operacao) when operacao in ~w[compra venda]a
   defguardp valid_currency?(moeda) when is_atom(moeda)
@@ -25,18 +31,18 @@ defmodule PTAX.Conversor do
 
   ## Exemplo
 
-      iex> PTAX.Conversor.run(15, %{de: :BRL, para: :GBP, data: ~D[2021-12-24], operacao: :venda})
+      iex> PTAX.Conversor.run(15, %{de: :BRL, para: :GBP, data: ~D[2021-12-24], operacao: :venda, tipo_boletim: PTAX.Cotacao.Boletim.Fechamento})
       {:ok, #Decimal<1.9772>}
-      iex> PTAX.Conversor.run(5, %{de: :USD, para: :BRL, data: ~D[2021-12-24], operacao: :compra})
+      iex> PTAX.Conversor.run(5, %{de: :USD, para: :BRL, data: ~D[2021-12-24], operacao: :compra, tipo_boletim: PTAX.Cotacao.Boletim.Fechamento})
       {:ok, #Decimal<28.2705>}
   """
   @spec run(valor, opts) :: {:ok, Decimal.t()} | {:error, Error.t()}
 
   def run(valor, opts) when valid_params?(opts) and has_base?(opts) do
-    %{de: de, para: para, data: data, operacao: operacao} = opts
+    %{de: de, para: para, data: data, operacao: operacao, tipo_boletim: tipo_boletim} = opts
     {moeda_cotada, base_conversor} = cotar([de, para])
 
-    with {:ok, %{^operacao => taxa}} <- Cotacao.get(moeda_cotada, data) do
+    with {:ok, %{^operacao => taxa}} <- Cotacao.get(moeda_cotada, data, tipo_boletim) do
       moeda_base = apply(Decimal, base_conversor, [valor, taxa])
 
       result = moeda_base |> Decimal.round(4) |> Decimal.normalize()

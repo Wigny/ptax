@@ -4,7 +4,7 @@ defmodule PTAX.MixProject do
   def project do
     [
       app: :ptax,
-      version: "0.1.2",
+      version: "0.2.0",
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -29,6 +29,7 @@ defmodule PTAX.MixProject do
       {:hackney, "~> 1.18"},
       {:jason, "~> 1.3"},
       {:typed_struct, "~> 0.2.1"},
+      {:enum_type, "~> 1.1"},
       {:decimal, "~> 2.0"},
       {:casex, "~> 0.4.2"},
       {:timex, "~> 3.7"},

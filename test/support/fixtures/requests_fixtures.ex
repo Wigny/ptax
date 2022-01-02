@@ -36,7 +36,7 @@ defmodule PTAX.RequestsFixtures do
   defp env(
          %{
            url:
-             "#{@base_url}/CotacaoMoedaPeriodoFechamento(codigoMoeda='GBP',dataInicialCotacao='12-24-2021',dataFinalCotacao='12-24-2021')"
+             "#{@base_url}/CotacaoMoedaPeriodo(moeda='GBP',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')"
          },
          _opts
        ) do
@@ -44,9 +44,27 @@ defmodule PTAX.RequestsFixtures do
       "@odata_context" => "",
       "value" => [
         %{
+          "cotacao_compra" => 7.5605,
+          "cotacao_venda" => 7.5669,
+          "data_hora_cotacao" => "2021-12-24 10:08:31.922",
+          "paridade_compra" => 1.3417,
+          "paridade_venda" => 1.3421,
+          "tipo_boletim" => "Abertura"
+        },
+        %{
+          "cotacao_compra" => 7.6032,
+          "cotacao_venda" => 7.6147,
+          "data_hora_cotacao" => "2021-12-24 11:04:02.173",
+          "paridade_compra" => 1.3402,
+          "paridade_venda" => 1.3406,
+          "tipo_boletim" => "Intermediário"
+        },
+        %{
           "cotacao_compra" => 7.5776,
           "cotacao_venda" => 7.5866,
           "data_hora_cotacao" => "2021-12-24 11:04:02.178",
+          "paridade_compra" => 1.3402,
+          "paridade_venda" => 1.3406,
           "tipo_boletim" => "Fechamento"
         }
       ]
@@ -58,7 +76,7 @@ defmodule PTAX.RequestsFixtures do
   defp env(
          %{
            url:
-             "#{@base_url}/CotacaoMoedaPeriodoFechamento(codigoMoeda='USD',dataInicialCotacao='12-24-2021',dataFinalCotacao='12-24-2021')"
+             "#{@base_url}/CotacaoMoedaPeriodo(moeda='USD',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')"
          },
          %{error: :not_found}
        ) do
@@ -73,7 +91,7 @@ defmodule PTAX.RequestsFixtures do
   defp env(
          %{
            url:
-             "#{@base_url}/CotacaoMoedaPeriodoFechamento(codigoMoeda='USD',dataInicialCotacao='12-24-2021',dataFinalCotacao='12-24-2021')"
+             "#{@base_url}/CotacaoMoedaPeriodo(moeda='USD',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')"
          },
          _opts
        ) do
@@ -81,9 +99,27 @@ defmodule PTAX.RequestsFixtures do
       "@odata_context" => "",
       "value" => [
         %{
+          "cotacao_compra" => 5.635,
+          "cotacao_venda" => 5.6381,
+          "data_hora_cotacao" => "2021-12-24 10:08:31.922",
+          "paridade_compra" => 1.0,
+          "paridade_venda" => 1.0,
+          "tipo_boletim" => "Abertura"
+        },
+        %{
+          "cotacao_compra" => 5.6732,
+          "cotacao_venda" => 5.6801,
+          "data_hora_cotacao" => "2021-12-24 11:04:02.173",
+          "paridade_compra" => 1.0,
+          "paridade_venda" => 1.0,
+          "tipo_boletim" => "Intermediário"
+        },
+        %{
           "cotacao_compra" => 5.6541,
           "cotacao_venda" => 5.6591,
           "data_hora_cotacao" => "2021-12-24 11:04:02.178",
+          "paridade_compra" => 1.0,
+          "paridade_venda" => 1.0,
           "tipo_boletim" => "Fechamento"
         }
       ]
@@ -95,7 +131,7 @@ defmodule PTAX.RequestsFixtures do
   defp env(
          %{
            url:
-             "#{@base_url}/CotacaoMoedaPeriodoFechamento(codigoMoeda='GBPS',dataInicialCotacao='12-24-2021',dataFinalCotacao='12-24-2021')"
+             "#{@base_url}/CotacaoMoedaPeriodo(moeda='GBPS',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')"
          },
          _opts
        ) do

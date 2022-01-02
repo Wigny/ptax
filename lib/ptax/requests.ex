@@ -23,15 +23,15 @@ defmodule PTAX.Requests do
     "/Moedas" |> get(query: @query) |> response()
   end
 
-  @spec cotacao_fechamento(moeda :: atom, periodo :: Date.Range.t()) :: result
-  def cotacao_fechamento(moeda, %{first: data_inicial, last: data_final}) do
+  @spec cotacao(moeda :: atom, periodo :: Date.Range.t()) :: result
+  def cotacao(moeda, %{first: data_inicial, last: data_final}) do
     params = [
       moeda: moeda,
       data_inicial: Timex.format!(data_inicial, "%m-%d-%Y", :strftime),
       data_final: Timex.format!(data_final, "%m-%d-%Y", :strftime)
     ]
 
-    "/CotacaoMoedaPeriodoFechamento(codigoMoeda=':moeda',dataInicialCotacao=':data_inicial',dataFinalCotacao=':data_final')"
+    "/CotacaoMoedaPeriodo(moeda=':moeda',dataInicial=':data_inicial',dataFinalCotacao=':data_final')"
     |> get(opts: [path_params: params], query: @query)
     |> response()
   end
@@ -42,7 +42,11 @@ defmodule PTAX.Requests do
   end
 
   defp response({:ok, %{status: status}}) when is_success?(status) do
-    error = Error.new(code: :not_found, message: "Dados não encontrados para a requisição")
+    error =
+      Error.new(
+        code: :not_found,
+        message: "Dados não encontrados para a requisição"
+      )
 
     {:error, error}
   end

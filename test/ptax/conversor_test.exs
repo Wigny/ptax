@@ -2,6 +2,14 @@ defmodule PTAX.ConversorTest do
   use ExUnit.Case
   alias PTAX.Conversor
 
+  @valid_opts %{
+    de: :USD,
+    para: :GBP,
+    data: ~D[2021-12-24],
+    operacao: :venda,
+    tipo_boletim: PTAX.Cotacao.Boletim.Fechamento
+  }
+
   setup do
     PTAX.RequestsFixtures.fixture()
 
@@ -10,24 +18,20 @@ defmodule PTAX.ConversorTest do
 
   describe "conversor" do
     test "run/2 converte de uma moeda para outra" do
-      opts = %{de: :USD, para: :GBP, data: ~D[2021-12-24], operacao: :venda}
-
-      assert {:ok, Decimal.from_float(11.5247)} == Conversor.run("15.45", opts)
+      assert {:ok, Decimal.from_float(11.5247)} == Conversor.run("15.45", @valid_opts)
     end
 
     test "run/2 lança erro se passado opções não suportadas" do
-      opts = %{de: :USD, para: :GBP, data: ~D[2021-12-24], operacao: :venda}
-
       assert_raise FunctionClauseError, fn ->
-        Conversor.run("15.45", %{opts | operacao: :vender})
+        Conversor.run("15.45", %{@valid_opts | operacao: :vender})
       end
 
       assert_raise FunctionClauseError, fn ->
-        Conversor.run("15.45", %{opts | de: "USD"})
+        Conversor.run("15.45", %{@valid_opts | de: "USD"})
       end
 
       assert_raise FunctionClauseError, fn ->
-        Conversor.run("15.45", %{opts | para: 5})
+        Conversor.run("15.45", %{@valid_opts | para: 5})
       end
     end
   end
