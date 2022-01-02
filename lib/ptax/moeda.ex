@@ -16,7 +16,7 @@ defmodule PTAX.Moeda do
       iex> PTAX.Moeda.list()
       {:ok, [%PTAX.Moeda{nome: "Euro", simbolo: :EUR}, %PTAX.Moeda{nome: "Libra Esterlina", simbolo: :GBP}]}
   """
-  @spec list :: {:ok, list(t)} | {:error, term}
+  @spec list :: {:ok, list(t)} | {:error, PTAX.Error.t()}
   def list do
     with {:ok, value} <- PTAX.Requests.moedas() do
       result = Enum.map(value, &parse/1)

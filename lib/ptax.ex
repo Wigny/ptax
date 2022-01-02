@@ -12,7 +12,7 @@ defmodule PTAX do
           operacao: Conversor.operacao() | nil
         ]
 
-  @spec moedas :: list(Moeda.t()) | {:error, term}
+  @spec moedas :: list(Moeda.t()) | {:error, Error.t()}
   defdelegate moedas, to: Moeda, as: :list
 
   @doc """

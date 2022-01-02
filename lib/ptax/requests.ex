@@ -23,8 +23,8 @@ defmodule PTAX.Requests do
     "/Moedas" |> get(query: @query) |> response()
   end
 
-  @spec cotacao_fechamento(atom, Date.t(), Date.t()) :: result
-  def cotacao_fechamento(moeda, data_inicial, data_final) do
+  @spec cotacao_fechamento(moeda :: atom, periodo :: Date.Range.t()) :: result
+  def cotacao_fechamento(moeda, %{first: data_inicial, last: data_final}) do
     params = [
       moeda: moeda,
       data_inicial: Timex.format!(data_inicial, "%m-%d-%Y", :strftime),

@@ -28,8 +28,8 @@ defmodule PTAX.RequestsTest do
     end
 
     test "cotacao_fechamento/3 retorna a cotação da moeda por período no fechamento" do
-      assert {:ok, [fechamento | _value]} =
-               Requests.cotacao_fechamento(:GBP, ~D[2021-12-24], ~D[2021-12-24])
+      periodo = Date.range(~D[2021-12-24], ~D[2021-12-24])
+      assert {:ok, [fechamento | _value]} = Requests.cotacao_fechamento(:GBP, periodo)
 
       assert %{
                "cotacao_compra" => 7.5776,
@@ -41,13 +41,15 @@ defmodule PTAX.RequestsTest do
 
     @tag error: :not_found
     test "cotacao_fechamento/3 lança erro `:not_found` se nenhum dado for retornado" do
-      assert {:error, error} = Requests.cotacao_fechamento(:USD, ~D[2021-12-24], ~D[2021-12-24])
+      periodo = Date.range(~D[2021-12-24], ~D[2021-12-24])
+      assert {:error, error} = Requests.cotacao_fechamento(:USD, periodo)
 
       assert %PTAX.Error{code: :not_found} = error
     end
 
     test "cotacao_fechamento/3 lança erro `:server_error` se houver erro de servidor" do
-      assert {:error, error} = Requests.cotacao_fechamento(:GBPS, ~D[2021-12-24], ~D[2021-12-24])
+      periodo = Date.range(~D[2021-12-24], ~D[2021-12-24])
+      assert {:error, error} = Requests.cotacao_fechamento(:GBPS, periodo)
 
       assert %PTAX.Error{code: :server_error, extra: %{http_status: 500}} = error
     end

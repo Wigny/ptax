@@ -10,10 +10,18 @@ defmodule PTAX.Cotacao do
   end
 
   @doc "Retorna a cotação de compra e de venda de uma moeda no fechamento para a data consultada"
-  @spec get(atom, Date.t()) :: {:ok, t} | {:error, term}
+  @spec get(atom, Date.t()) :: {:ok, t()} | {:error, PTAX.Error.t()}
   def get(moeda, data) do
-    with {:ok, [fechamento | _value]} <- PTAX.Requests.cotacao_fechamento(moeda, data, data) do
-      result = parse(fechamento)
+    range = Date.range(data, data)
+
+    with {:ok, [fechamento]} <- list(moeda, range), do: {:ok, fechamento}
+  end
+
+  @doc "Retorna lista de cotação de compra e de venda de uma moeda no fechamento para um período consultado"
+  @spec list(atom, Date.Range.t()) :: {:ok, list(t)} | {:error, PTAX.Error.t()}
+  def list(moeda, periodo) do
+    with {:ok, value} <- PTAX.Requests.cotacao_fechamento(moeda, periodo) do
+      result = Enum.map(value, &parse/1)
 
       {:ok, result}
     end
