@@ -6,8 +6,8 @@ defmodule PTAX.ConversorTest do
     de: :USD,
     para: :GBP,
     data: ~D[2021-12-24],
-    operacao: :venda,
-    tipo_boletim: PTAX.Cotacao.Boletim.Fechamento
+    operacao: :sell,
+    tipo_boletim: PTAX.Quotation.Bulletin.Closing
   }
 
   setup do
