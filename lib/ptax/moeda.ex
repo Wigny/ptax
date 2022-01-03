@@ -30,4 +30,8 @@ defmodule PTAX.Moeda do
 
     struct!(__MODULE__, params)
   end
+
+  def translate_currency(currency, locale \\ "en") do
+    Gettext.with_locale(locale, fn -> Gettext.dgettext(PTAX.Gettext, "currencies", currency) end)
+  end
 end
