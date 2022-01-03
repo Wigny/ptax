@@ -3,7 +3,7 @@ defmodule PTAX do
   Agrega funções de listagem e conversão de moedas suportadas
   """
 
-  alias PTAX.{Conversor, Quotation, Error, Moeda}
+  alias PTAX.{Conversor, Quotation, Error, Currency}
 
   @type currency :: atom()
 
@@ -15,8 +15,8 @@ defmodule PTAX do
           tipo_boletim: Quotation.Boletim.t() | nil
         ]
 
-  @spec moedas :: list(Moeda.t()) | {:error, Error.t()}
-  defdelegate moedas, to: Moeda, as: :list
+  @spec moedas :: list(Currency.t()) | {:error, Error.t()}
+  defdelegate moedas, to: Currency, as: :list
 
   @doc """
   Converte um valor de uma moeda para outra
