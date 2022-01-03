@@ -1,8 +1,9 @@
 defmodule PTAX.Requests do
-  @moduledoc "Módulo para trabalhar com requests para a API PTAX"
+  @moduledoc "Make HTTP requests to the PTAX API"
 
   use Tesla, only: [:get], docs: false
 
+  alias PTAX
   alias PTAX.Error
 
   @type result :: {:ok, list} | {:error, Error.t()}
@@ -18,20 +19,20 @@ defmodule PTAX.Requests do
   plug PTAX.Requests.Case
   plug Tesla.Middleware.JSON
 
-  @spec moedas :: result
-  def moedas() do
+  @spec currencies :: result
+  def currencies() do
     "/Moedas" |> get(query: @query) |> response()
   end
 
-  @spec cotacao(moeda :: atom, periodo :: Date.Range.t()) :: result
-  def cotacao(moeda, %{first: data_inicial, last: data_final}) do
+  @spec quotation(currency :: PTAX.currency(), period :: Date.Range.t()) :: result
+  def quotation(currency, period) do
     params = [
-      moeda: moeda,
-      data_inicial: Timex.format!(data_inicial, "%m-%d-%Y", :strftime),
-      data_final: Timex.format!(data_final, "%m-%d-%Y", :strftime)
+      currency: currency,
+      date_start: Timex.format!(period.first, "%m-%d-%Y", :strftime),
+      date_end: Timex.format!(period.last, "%m-%d-%Y", :strftime)
     ]
 
-    "/CotacaoMoedaPeriodo(moeda=':moeda',dataInicial=':data_inicial',dataFinalCotacao=':data_final')"
+    "/CotacaoMoedaPeriodo(moeda=':currency',dataInicial=':date_start',dataFinalCotacao=':date_end')"
     |> get(opts: [path_params: params], query: @query)
     |> response()
   end
@@ -42,34 +43,17 @@ defmodule PTAX.Requests do
   end
 
   defp response({:ok, %{status: status}}) when is_success?(status) do
-    error =
-      Error.new(
-        code: :not_found,
-        message: "Dados não encontrados para a requisição"
-      )
-
+    error = Error.new(code: :not_found, message: "Data not found for request")
     {:error, error}
   end
 
   defp response({:ok, %{status: status}}) when is_error?(status) do
-    error =
-      Error.new(
-        code: :server_error,
-        message: "Erro desconhecido",
-        extra: %{http_status: status}
-      )
-
+    error = Error.new(code: :server_error, message: "Unknown error")
     {:error, error}
   end
 
-  defp response({:error, error}) do
-    error =
-      Error.new(
-        code: :network_error,
-        message: "Erro ao realizar request",
-        extra: %{reason: error}
-      )
-
+  defp response({:error, _error}) do
+    error = Error.new(code: :network_error, message: "Error making request")
     {:error, error}
   end
 end

@@ -19,7 +19,7 @@ defmodule PTAX.Currency do
   """
   @spec list :: {:ok, list(t)} | {:error, PTAX.Error.t()}
   def list do
-    with {:ok, value} <- PTAX.Requests.moedas() do
+    with {:ok, value} <- PTAX.Requests.currencies() do
       result = Enum.map(value, &parse/1)
 
       {:ok, result}

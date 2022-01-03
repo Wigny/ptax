@@ -11,7 +11,7 @@ defmodule PTAX.RequestsTest do
 
   describe "requests" do
     test "moedas/0 retorna os dados da moedas suportadas" do
-      assert {:ok, [moeda | _moedas]} = Requests.moedas()
+      assert {:ok, [moeda | _moedas]} = Requests.currencies()
 
       assert %{
                "nome_formatado" => "Libra Esterlina",
@@ -22,14 +22,14 @@ defmodule PTAX.RequestsTest do
 
     @tag error: :network_error
     test "moedas/0 lança erro `network_error` se ocorrer erro ao realizar request" do
-      assert {:error, error} = Requests.moedas()
+      assert {:error, error} = Requests.currencies()
 
-      assert %PTAX.Error{code: :network_error, extra: %{reason: :nxdomain}} = error
+      assert %PTAX.Error{code: :network_error} = error
     end
 
     test "cotacao/2 retorna a cotação da moeda por período" do
       periodo = Date.range(~D[2021-12-24], ~D[2021-12-24])
-      assert {:ok, cotacoes} = Requests.cotacao(:GBP, periodo)
+      assert {:ok, cotacoes} = Requests.quotation(:GBP, periodo)
 
       assert %{
                "cotacao_compra" => 7.5776,
@@ -42,16 +42,16 @@ defmodule PTAX.RequestsTest do
     @tag error: :not_found
     test "cotacao/2 lança erro `:not_found` se nenhum dado for retornado" do
       periodo = Date.range(~D[2021-12-24], ~D[2021-12-24])
-      assert {:error, error} = Requests.cotacao(:USD, periodo)
+      assert {:error, error} = Requests.quotation(:USD, periodo)
 
       assert %PTAX.Error{code: :not_found} = error
     end
 
     test "cotacao/2 lança erro `:server_error` se houver erro de servidor" do
       periodo = Date.range(~D[2021-12-24], ~D[2021-12-24])
-      assert {:error, error} = Requests.cotacao(:GBPS, periodo)
+      assert {:error, error} = Requests.quotation(:GBPS, periodo)
 
-      assert %PTAX.Error{code: :server_error, extra: %{http_status: 500}} = error
+      assert %PTAX.Error{code: :server_error} = error
     end
   end
 end

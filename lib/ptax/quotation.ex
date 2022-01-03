@@ -54,7 +54,7 @@ defmodule PTAX.Quotation do
           bulletin :: Bulletin.t() | nil
         ) :: {:ok, list(t)} | {:error, Error.t()}
   def list(currency, period, bulletin \\ nil) do
-    with {:ok, value} <- PTAX.Requests.cotacao(currency, period) do
+    with {:ok, value} <- PTAX.Requests.quotation(currency, period) do
       result = value |> Enum.map(&parse/1) |> filter(bulletin)
 
       {:ok, result}
