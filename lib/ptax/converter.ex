@@ -4,13 +4,11 @@ defmodule PTAX.Converter do
   alias PTAX
   alias PTAX.{Quotation, Error}
 
-  @type operation :: :buy | :sell
-
   @type opts :: %{
           from: PTAX.amount(),
           to: PTAX.amount(),
           date: Date.t(),
-          operation: operation,
+          operation: PTAX.operation(),
           bulletin: Quotation.Bulletin.t()
         }
 
