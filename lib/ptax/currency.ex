@@ -12,7 +12,7 @@ defmodule PTAX.Currency do
   @doc """
   Returns a list of supported currencies
 
-  ## Exemplo
+  ## Example
 
       iex> PTAX.Currency.list()
       {:ok, [%PTAX.Currency{name: "Euro", symbol: :EUR}, %PTAX.Currency{name: "Pound Sterling", symbol: :GBP}]}

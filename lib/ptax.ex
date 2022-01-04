@@ -3,16 +3,17 @@ defmodule PTAX do
   Agrega funções de listagem e conversão de moedas suportadas
   """
 
-  alias PTAX.{Conversor, Quotation, Error, Currency}
+  alias PTAX.{Converter, Quotation, Error, Currency}
 
   @type currency :: atom()
+  @type amount :: Decimal.decimal()
 
   @type converter_opts :: [
-          de: Conversor.moeda(),
-          para: Conversor.moeda(),
-          data: Date.t() | nil,
-          operacao: Conversor.operacao() | nil,
-          tipo_boletim: Quotation.Boletim.t() | nil
+          de: Converter.moeda(),
+          para: Converter.moeda(),
+          date: Date.t() | nil,
+          operation: Converter.operation() | nil,
+          bulletin: Quotation.Boletim.t() | nil
         ]
 
   @spec moedas :: list(Currency.t()) | {:error, Error.t()}
@@ -21,21 +22,21 @@ defmodule PTAX do
   @doc """
   Converte um valor de uma moeda para outra
 
-  ## Exemplo
+  ## Example
 
-      iex> PTAX.converter(5, de: :USD, para: :BRL, data: ~D[2021-12-24], operacao: :buy, tipo_boletim: PTAX.Quotation.Bulletin.Closing)
+      iex> PTAX.converter(5, de: :USD, para: :BRL, date: ~D[2021-12-24], operation: :buy, bulletin: PTAX.Quotation.Bulletin.Closing)
       {:ok, #Decimal<28.2705>}
   """
   @spec converter(
-          valor :: Conversor.valor(),
-          opts :: converter_opts | Conversor.opts()
+          valor :: Converter.valor(),
+          opts :: converter_opts | Converter.opts()
         ) :: {:ok, Decimal.t()} | {:error, Error.t()}
 
   def converter(valor, opts) when is_list(opts) do
     default_opts = %{
-      data: "America/Sao_Paulo" |> Timex.now() |> Timex.to_date(),
-      operacao: :sell,
-      tipo_boletim: Quotation.Bulletin.Closing
+      date: "America/Sao_Paulo" |> Timex.now() |> Timex.to_date(),
+      operation: :sell,
+      bulletin: Quotation.Bulletin.Closing
     }
 
     opts = Enum.into(opts, default_opts)
@@ -43,20 +44,20 @@ defmodule PTAX do
   end
 
   def converter(valor, opts) do
-    Conversor.run(valor, opts)
+    Converter.run(valor, opts)
   end
 
   @doc """
   Semelhante a `converter/2`, mas gera um erro se o valor não puder ser convertido.
 
-  ## Exemplo
+  ## Example
 
-      iex> PTAX.converter!(5, de: :USD, para: :BRL, data: ~D[2021-12-24], operacao: :buy, tipo_boletim: PTAX.Quotation.Bulletin.Closing)
+      iex> PTAX.converter!(5, de: :USD, para: :BRL, date: ~D[2021-12-24], operation: :buy, bulletin: PTAX.Quotation.Bulletin.Closing)
       #Decimal<28.2705>
   """
   @spec converter!(
-          valor :: Conversor.valor(),
-          opts :: converter_opts | Conversor.opts()
+          valor :: Converter.valor(),
+          opts :: converter_opts | Converter.opts()
         ) :: Decimal.t()
 
   def converter!(valor, opts) do

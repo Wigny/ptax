@@ -14,8 +14,8 @@ defmodule PTAX.Quotation do
   end
 
   typedstruct enforce: true do
-    field :buy, Decimal.t()
-    field :sell, Decimal.t()
+    field :buy, PTAX.amount()
+    field :sell, PTAX.amount()
     field :quoted_in, DateTime.t()
     field :bulletin, Bulletin.t()
   end
