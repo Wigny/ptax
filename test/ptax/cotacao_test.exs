@@ -17,7 +17,7 @@ defmodule PTAX.CotacaoTest do
                compra: Decimal.from_float(5.6541),
                venda: Decimal.from_float(5.6591),
                cotado_em: DateTime.from_naive!(~N[2021-12-24 11:04:02.178], "America/Sao_Paulo"),
-               tipo_boletim: Cotacao.Boletim.Fechamento
+               boletim: Cotacao.Boletim.Fechamento
              } == cotacao
     end
   end

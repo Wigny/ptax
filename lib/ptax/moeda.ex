@@ -4,8 +4,8 @@ defmodule PTAX.Moeda do
   use TypedStruct
 
   typedstruct enforce: true do
-    field :nome, binary
-    field :simbolo, atom
+    field :nome, binary()
+    field :simbolo, PTAX.moeda()
   end
 
   @doc """

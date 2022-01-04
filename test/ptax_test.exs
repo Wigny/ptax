@@ -1,8 +1,6 @@
 defmodule PTAXTest do
   use ExUnit.Case
 
-  alias PTAX
-
   setup do
     PTAX.RequestsFixtures.fixture()
 

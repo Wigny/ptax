@@ -1,5 +1,5 @@
 defmodule PTAX.Requests do
-  @moduledoc "Módulo para trabalhar com requests para a API PTAX"
+  @moduledoc "Realiza requests HTTP para a API PTAX"
 
   use Tesla, only: [:get], docs: false
 
@@ -23,12 +23,12 @@ defmodule PTAX.Requests do
     "/Moedas" |> get(query: @query) |> response()
   end
 
-  @spec cotacao(moeda :: atom, periodo :: Date.Range.t()) :: result
-  def cotacao(moeda, %{first: data_inicial, last: data_final}) do
+  @spec cotacao(moeda :: PTAX.moeda(), periodo :: Date.Range.t()) :: result
+  def cotacao(moeda, periodo) do
     params = [
       moeda: moeda,
-      data_inicial: Timex.format!(data_inicial, "%m-%d-%Y", :strftime),
-      data_final: Timex.format!(data_final, "%m-%d-%Y", :strftime)
+      data_inicial: Timex.format!(periodo.first, "%m-%d-%Y", :strftime),
+      data_final: Timex.format!(periodo.last, "%m-%d-%Y", :strftime)
     ]
 
     "/CotacaoMoedaPeriodo(moeda=':moeda',dataInicial=':data_inicial',dataFinalCotacao=':data_final')"
@@ -42,34 +42,17 @@ defmodule PTAX.Requests do
   end
 
   defp response({:ok, %{status: status}}) when is_success?(status) do
-    error =
-      Error.new(
-        code: :not_found,
-        message: "Dados não encontrados para a requisição"
-      )
-
+    error = Error.new(code: :not_found, message: "Dados não encontrados para a requisição")
     {:error, error}
   end
 
   defp response({:ok, %{status: status}}) when is_error?(status) do
-    error =
-      Error.new(
-        code: :server_error,
-        message: "Erro desconhecido",
-        extra: %{http_status: status}
-      )
-
+    error = Error.new(code: :server_error, message: "Erro desconhecido")
     {:error, error}
   end
 
-  defp response({:error, error}) do
-    error =
-      Error.new(
-        code: :network_error,
-        message: "Erro ao realizar request",
-        extra: %{reason: error}
-      )
-
+  defp response({:error, _error}) do
+    error = Error.new(code: :network_error, message: "Erro ao realizar request")
     {:error, error}
   end
 end

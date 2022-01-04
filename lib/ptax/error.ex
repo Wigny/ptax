@@ -1,7 +1,7 @@
 defmodule PTAX.Error do
-  defexception ~w[message code extra]a
+  defexception ~w[message code]a
 
-  @type t :: %PTAX.Error{message: binary, code: atom, extra: map | nil}
+  @type t :: %PTAX.Error{message: binary, code: atom}
 
   @spec new(Enum.t()) :: t
   def new(fields) do

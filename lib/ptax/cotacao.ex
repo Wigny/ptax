@@ -13,22 +13,22 @@ defmodule PTAX.Cotacao do
   end
 
   typedstruct enforce: true do
-    field :compra, Decimal.t()
-    field :venda, Decimal.t()
+    field :compra, PTAX.valor()
+    field :venda, PTAX.valor()
     field :cotado_em, DateTime.t()
-    field :tipo_boletim, Boletim.t()
+    field :boletim, Boletim.t()
   end
 
   @doc "Retorna a cotação de compra e de venda de uma moeda para a data consultada"
   @spec get(
-          moeda :: atom,
+          moeda :: PTAX.moeda(),
           data :: Date.t(),
-          tipo_boletim :: Boletim.t() | nil
+          boletim :: Boletim.t() | nil
         ) :: {:ok, t()} | {:error, Error.t()}
-  def get(moeda, data, tipo_boletim \\ Boletim.Fechamento) do
+  def get(moeda, data, boletim \\ Boletim.Fechamento) do
     periodo = Date.range(data, data)
 
-    case list(moeda, periodo, tipo_boletim) do
+    case list(moeda, periodo, boletim) do
       {:ok, [cotacao]} ->
         {:ok, cotacao}
 
@@ -48,13 +48,13 @@ defmodule PTAX.Cotacao do
 
   @doc "Retorna lista de cotação de compra e de venda de uma moeda para um período consultado"
   @spec list(
-          moeda :: atom,
+          moeda :: PTAX.moeda(),
           periodo :: Date.Range.t(),
-          tipo_boletim :: Boletim.t() | nil
+          boletim :: Boletim.t() | nil
         ) :: {:ok, list(t)} | {:error, Error.t()}
-  def list(moeda, periodo, tipo_boletim \\ nil) do
+  def list(moeda, periodo, boletim \\ nil) do
     with {:ok, value} <- PTAX.Requests.cotacao(moeda, periodo) do
-      result = value |> Enum.map(&parse/1) |> filter(tipo_boletim)
+      result = value |> Enum.map(&parse/1) |> filter(boletim)
 
       {:ok, result}
     end
@@ -64,7 +64,7 @@ defmodule PTAX.Cotacao do
          "cotacao_compra" => compra,
          "cotacao_venda" => venda,
          "data_hora_cotacao" => cotado_em,
-         "tipo_boletim" => tipo_boletim
+         "tipo_boletim" => boletim
        }) do
     params = %{
       compra: Decimal.from_float(compra),
@@ -73,7 +73,7 @@ defmodule PTAX.Cotacao do
         cotado_em
         |> Timex.parse!("{ISO:Extended}")
         |> Timex.Timezone.convert("America/Sao_Paulo"),
-      tipo_boletim: Boletim.from(tipo_boletim)
+      boletim: Boletim.from(boletim)
     }
 
     struct!(__MODULE__, params)
@@ -83,11 +83,11 @@ defmodule PTAX.Cotacao do
     cotacoes
   end
 
-  defp filter(cotacoes, tipo_boletim) when is_list(tipo_boletim) do
-    Enum.filter(cotacoes, &(&1.tipo_boletim in tipo_boletim))
+  defp filter(cotacoes, boletim) when is_list(boletim) do
+    Enum.filter(cotacoes, &(&1.boletim in boletim))
   end
 
-  defp filter(cotacoes, tipo_boletim) do
-    Enum.filter(cotacoes, &(&1.tipo_boletim == tipo_boletim))
+  defp filter(cotacoes, boletim) do
+    Enum.filter(cotacoes, &(&1.boletim == boletim))
   end
 end

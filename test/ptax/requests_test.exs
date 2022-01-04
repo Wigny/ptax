@@ -24,7 +24,7 @@ defmodule PTAX.RequestsTest do
     test "moedas/0 lança erro `network_error` se ocorrer erro ao realizar request" do
       assert {:error, error} = Requests.moedas()
 
-      assert %PTAX.Error{code: :network_error, extra: %{reason: :nxdomain}} = error
+      assert %PTAX.Error{code: :network_error} = error
     end
 
     test "cotacao/2 retorna a cotação da moeda por período" do
@@ -51,7 +51,7 @@ defmodule PTAX.RequestsTest do
       periodo = Date.range(~D[2021-12-24], ~D[2021-12-24])
       assert {:error, error} = Requests.cotacao(:GBPS, periodo)
 
-      assert %PTAX.Error{code: :server_error, extra: %{http_status: 500}} = error
+      assert %PTAX.Error{code: :server_error} = error
     end
   end
 end
