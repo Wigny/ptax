@@ -11,7 +11,8 @@ defmodule PTAX.MixProject do
       start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
-      deps: deps()
+      deps: deps(),
+      dialyzer: dialyzer()
     ]
   end
 
@@ -36,8 +37,13 @@ defmodule PTAX.MixProject do
       {:timex, "~> 3.7"},
       {:gettext, "~> 0.19.0"},
       {:ex_doc, "~> 0.26", only: :dev, runtime: false},
-      {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.1", only: [:dev], runtime: false}
     ]
+  end
+
+  defp dialyzer do
+    [plt_file: {:no_warn, "priv/plts/dialyzer.plt"}]
   end
 
   defp description do

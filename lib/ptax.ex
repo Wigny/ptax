@@ -48,11 +48,7 @@ defmodule PTAX do
       iex> PTAX.convert!(5, from: :USD, to: :BRL, date: ~D[2021-12-24], operation: :buy, bulletin: PTAX.Quotation.Bulletin.Closing)
       #Decimal<28.2705>
   """
-  @spec convert!(
-          amount :: Converter.amount(),
-          opts :: Keyword.t() | Converter.opts()
-        ) :: Decimal.t()
-
+  @spec convert!(amount :: amount, opts :: Keyword.t() | Converter.opts()) :: Decimal.t()
   def convert!(amount, opts) do
     case convert(amount, opts) do
       {:ok, result} -> result

@@ -5,8 +5,8 @@ defmodule PTAX.Converter do
   alias PTAX.{Quotation, Error}
 
   @type opts :: %{
-          from: PTAX.amount(),
-          to: PTAX.amount(),
+          from: PTAX.currency(),
+          to: PTAX.currency(),
           date: Date.t(),
           operation: PTAX.operation(),
           bulletin: Quotation.Bulletin.t()
