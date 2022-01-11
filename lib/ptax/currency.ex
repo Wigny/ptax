@@ -2,7 +2,6 @@ defmodule PTAX.Currency do
   @moduledoc "Defines the structure of a currency"
 
   use TypedStruct
-  alias PTAX
 
   typedstruct enforce: true do
     field :name, binary()

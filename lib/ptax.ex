@@ -9,6 +9,16 @@ defmodule PTAX do
   @type currency :: atom()
   @type operation :: :buy | :sell
 
+  @type convert_opts ::
+          Converter.opts()
+          | [
+              from: currency,
+              to: currency,
+              date: Date.t() | nil,
+              operation: operation | nil,
+              bulletin: Quotation.Bulletin.t() | nil
+            ]
+
   @spec currencies :: {:ok, list(Currency.t())} | {:error, Error.t()}
   defdelegate currencies, to: Currency, as: :list
 
@@ -22,7 +32,7 @@ defmodule PTAX do
   """
   @spec convert(
           amount :: amount,
-          opts :: Keyword.t() | Converter.opts()
+          opts :: convert_opts
         ) :: {:ok, Decimal.t()} | {:error, Error.t()}
 
   def convert(amount, opts) when is_list(opts) do
@@ -48,7 +58,7 @@ defmodule PTAX do
       iex> PTAX.convert!(5, from: :USD, to: :BRL, date: ~D[2021-12-24], operation: :buy, bulletin: PTAX.Quotation.Bulletin.Closing)
       #Decimal<28.2705>
   """
-  @spec convert!(amount :: amount, opts :: Keyword.t() | Converter.opts()) :: Decimal.t()
+  @spec convert!(amount :: amount, opts :: convert_opts) :: Decimal.t()
   def convert!(amount, opts) do
     case convert(amount, opts) do
       {:ok, result} -> result

@@ -1,7 +1,6 @@
 defmodule PTAX.Converter do
   @moduledoc "Gathers currency conversion functions"
 
-  alias PTAX
   alias PTAX.{Quotation, Error}
 
   @type opts :: %{

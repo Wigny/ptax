@@ -4,7 +4,6 @@ defmodule PTAX.Quotation do
   use TypedStruct
   use EnumType
 
-  alias PTAX
   alias PTAX.Error
 
   defenum Bulletin do
