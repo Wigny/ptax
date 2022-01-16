@@ -15,7 +15,7 @@ defmodule PTAX.Requests do
 
   plug Tesla.Middleware.BaseUrl, "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata"
   plug Tesla.Middleware.PathParams
-  plug PTAX.Requests.Case
+  plug TeslaCase.Middleware
   plug Tesla.Middleware.JSON
 
   @spec moedas :: result

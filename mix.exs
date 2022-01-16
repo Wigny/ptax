@@ -27,12 +27,12 @@ defmodule PTAX.MixProject do
   defp deps do
     [
       {:tesla, "~> 1.4"},
+      {:tesla_case, "~> 0.1"},
       {:hackney, "~> 1.18"},
       {:jason, "~> 1.3"},
       {:typed_struct, "~> 0.2.1"},
       {:enum_type, "~> 1.1"},
       {:decimal, "~> 2.0"},
-      {:casex, "~> 0.4.2"},
       {:timex, "~> 3.7"},
       {:ex_doc, "~> 0.26", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
