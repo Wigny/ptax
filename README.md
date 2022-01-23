@@ -4,17 +4,24 @@ A currency converter that uses the API provided by the Brazilian Open Data Porta
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `ptax` to your list of dependencies in `mix.exs`:
+This package can be installed by adding `ptax` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:ptax, "~> 0.1.1"}
+    {:ptax, "~> 0.1"}
   ]
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/ptax>.
+## Configuration
+
+Install and configure a Tesla adapter:
+
+```elixir
+# config/config.exs
+
+config :tesla, adapter: Tesla.Adapter.Hackney
+```
+
+> See Tesla [installation](https://hexdocs.pm/tesla/readme.html#installation) and [adapters](https://hexdocs.pm/tesla/readme.html#adapters) docs.
