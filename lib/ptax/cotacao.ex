@@ -4,7 +4,7 @@ defmodule PTAX.Cotacao do
   use TypedStruct
   use EnumType
 
-  alias PTAX.Error
+  alias PTAX.{Error, Requests}
 
   defenum Boletim do
     value Abertura, "Abertura"
@@ -53,11 +53,23 @@ defmodule PTAX.Cotacao do
           boletim :: Boletim.t() | nil
         ) :: {:ok, list(t)} | {:error, Error.t()}
   def list(moeda, periodo, boletim \\ nil) do
-    with {:ok, value} <- PTAX.Requests.cotacao(moeda, periodo) do
+    with {:ok, value} <- request(moeda, periodo) do
       result = value |> Enum.map(&parse/1) |> filter(boletim)
 
       {:ok, result}
     end
+  end
+
+  defp request(moeda, periodo) do
+    params = [
+      {"moeda", moeda},
+      {"dataInicial", Timex.format!(periodo.first, "%m-%d-%Y", :strftime)},
+      {"dataFinalCotacao", Timex.format!(periodo.last, "%m-%d-%Y", :strftime)}
+    ]
+
+    "/CotacaoMoedaPeriodo"
+    |> Requests.get(opts: [odata_params: params])
+    |> Requests.response()
   end
 
   defp parse(%{
