@@ -14,8 +14,8 @@ defmodule PTAX.CurrencyTest do
       assert {:ok, currencies} = Currency.list()
 
       assert [
-               %Currency{name: "Pound Sterling", symbol: :GBP},
-               %Currency{name: "US Dollar", symbol: :USD}
+               %Currency{name: "Libra Esterlina", symbol: :GBP},
+               %Currency{name: "Dólar dos Estados Unidos", symbol: :USD}
              ] == currencies
     end
   end

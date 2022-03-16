@@ -5,15 +5,11 @@ defmodule PTAX.RequestsFixtures do
 
   @base_url "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata"
 
-  def fixture(opts \\ %{}) do
-    mock(&env(&1, opts))
+  def fixture() do
+    mock(&env/1)
   end
 
-  defp env(%{url: "#{@base_url}/Moedas"}, %{error: :network_error}) do
-    {:error, :nxdomain}
-  end
-
-  defp env(%{url: "#{@base_url}/Moedas"}, _opts) do
+  defp env(%{url: "#{@base_url}/Moedas"}) do
     body = %{
       "@odata_context" => "",
       "value" => [
@@ -33,13 +29,10 @@ defmodule PTAX.RequestsFixtures do
     json(body)
   end
 
-  defp env(
-         %{
-           url:
-             "#{@base_url}/CotacaoMoedaPeriodo(moeda='GBP',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')"
-         },
-         _opts
-       ) do
+  defp env(%{
+         url:
+           "#{@base_url}/CotacaoMoedaPeriodo(moeda='GBP',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')"
+       }) do
     body = %{
       "@odata_context" => "",
       "value" => [
@@ -73,28 +66,10 @@ defmodule PTAX.RequestsFixtures do
     json(body)
   end
 
-  defp env(
-         %{
-           url:
-             "#{@base_url}/CotacaoMoedaPeriodo(moeda='USD',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')"
-         },
-         %{error: :not_found}
-       ) do
-    body = %{
-      "@odata_context" => "",
-      "value" => []
-    }
-
-    json(body)
-  end
-
-  defp env(
-         %{
-           url:
-             "#{@base_url}/CotacaoMoedaPeriodo(moeda='USD',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')"
-         },
-         _opts
-       ) do
+  defp env(%{
+         url:
+           "#{@base_url}/CotacaoMoedaPeriodo(moeda='USD',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')"
+       }) do
     body = %{
       "@odata_context" => "",
       "value" => [
@@ -128,13 +103,10 @@ defmodule PTAX.RequestsFixtures do
     json(body)
   end
 
-  defp env(
-         %{
-           url:
-             "#{@base_url}/CotacaoMoedaPeriodo(moeda='GBPS',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')"
-         },
-         _opts
-       ) do
+  defp env(%{
+         url:
+           "#{@base_url}/CotacaoMoedaPeriodo(moeda='GBPS',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')"
+       }) do
     body = ~s(/*{
       "codigo" : 500,
       "mensagem" : "Erro desconhecido"

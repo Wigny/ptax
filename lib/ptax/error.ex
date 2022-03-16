@@ -4,7 +4,5 @@ defmodule PTAX.Error do
   @type t :: %PTAX.Error{message: binary, code: atom}
 
   @spec new(Enum.t()) :: t
-  def new(fields) do
-    struct!(__MODULE__, fields)
-  end
+  def new(fields), do: struct!(__MODULE__, fields)
 end

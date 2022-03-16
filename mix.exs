@@ -4,13 +4,14 @@ defmodule PTAX.MixProject do
   def project do
     [
       app: :ptax,
-      version: "0.3.0",
+      version: "0.3.2",
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
+      docs: docs(),
       deps: deps(),
       dialyzer: dialyzer()
     ]
@@ -28,15 +29,14 @@ defmodule PTAX.MixProject do
   defp deps do
     [
       {:tesla, "~> 1.4"},
-      {:hackney, "~> 1.18"},
-      {:jason, "~> 1.3"},
-      {:typed_struct, "~> 0.2.1"},
+      {:tesla_keys, "~> 0.1"},
+      {:jason, ">= 1.0.0"},
+      {:typed_struct, "~> 0.3"},
       {:enum_type, "~> 1.1"},
       {:decimal, "~> 2.0"},
-      {:casex, "~> 0.4.2"},
       {:timex, "~> 3.7"},
       {:gettext, "~> 0.19.0"},
-      {:ex_doc, "~> 0.26", only: :dev, runtime: false},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.1", only: [:dev], runtime: false}
     ]
@@ -54,6 +54,13 @@ defmodule PTAX.MixProject do
     [
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/wigny/ptax"}
+    ]
+  end
+
+  defp docs do
+    [
+      main: "readme",
+      extras: ["README.md"]
     ]
   end
 end

@@ -4,7 +4,7 @@ defmodule PTAX.Quotation do
   use TypedStruct
   use EnumType
 
-  alias PTAX.Error
+  alias PTAX.{Error, Requests}
 
   defenum Bulletin do
     value Opening, "Abertura"
@@ -53,7 +53,15 @@ defmodule PTAX.Quotation do
           bulletin :: Bulletin.t() | nil
         ) :: {:ok, list(t)} | {:error, Error.t()}
   def list(currency, period, bulletin \\ nil) do
-    with {:ok, value} <- PTAX.Requests.quotation(currency, period) do
+    params = [
+      {"moeda", currency},
+      {"dataInicial", Timex.format!(period.first, "%m-%d-%Y", :strftime)},
+      {"dataFinalCotacao", Timex.format!(period.last, "%m-%d-%Y", :strftime)}
+    ]
+
+    result = Requests.get("/CotacaoMoedaPeriodo", opts: [odata_params: params])
+
+    with {:ok, value} <- Requests.response(result) do
       result = value |> Enum.map(&parse/1) |> filter(bulletin)
 
       {:ok, result}
@@ -83,8 +91,8 @@ defmodule PTAX.Quotation do
     quotations
   end
 
-  defp filter(quotations, bulletin) when is_list(bulletin) do
-    Enum.filter(quotations, &(&1.bulletin in bulletin))
+  defp filter(quotations, bulletins) when is_list(bulletins) do
+    Enum.filter(quotations, &(&1.bulletin in bulletins))
   end
 
   defp filter(quotations, bulletin) do

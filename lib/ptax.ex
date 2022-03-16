@@ -9,15 +9,15 @@ defmodule PTAX do
   @type currency :: atom()
   @type operation :: :buy | :sell
 
-  @type convert_opts ::
-          Converter.opts()
-          | [
-              from: currency,
-              to: currency,
-              date: Date.t() | nil,
-              operation: operation | nil,
-              bulletin: Quotation.Bulletin.t() | nil
-            ]
+  @typep convert_opts ::
+           Converter.opts()
+           | [
+               from: currency,
+               to: currency,
+               date: Date.t() | nil,
+               operation: operation | nil,
+               bulletin: Quotation.Bolletim.t() | nil
+             ]
 
   @spec currencies :: {:ok, list(Currency.t())} | {:error, Error.t()}
   defdelegate currencies, to: Currency, as: :list
@@ -30,11 +30,7 @@ defmodule PTAX do
       iex> PTAX.convert(5, from: :USD, to: :BRL, date: ~D[2021-12-24], operation: :buy, bulletin: PTAX.Quotation.Bulletin.Closing)
       {:ok, #Decimal<28.2705>}
   """
-  @spec convert(
-          amount :: amount,
-          opts :: convert_opts
-        ) :: {:ok, Decimal.t()} | {:error, Error.t()}
-
+  @spec convert(amount :: amount, opts :: convert_opts) :: {:ok, amount} | {:error, Error.t()}
   def convert(amount, opts) when is_list(opts) do
     default_opts = %{
       date: "America/Sao_Paulo" |> Timex.now() |> Timex.to_date(),
@@ -58,7 +54,7 @@ defmodule PTAX do
       iex> PTAX.convert!(5, from: :USD, to: :BRL, date: ~D[2021-12-24], operation: :buy, bulletin: PTAX.Quotation.Bulletin.Closing)
       #Decimal<28.2705>
   """
-  @spec convert!(amount :: amount, opts :: convert_opts) :: Decimal.t()
+  @spec convert!(amount :: amount, opts :: convert_opts) :: amount
   def convert!(amount, opts) do
     case convert(amount, opts) do
       {:ok, result} -> result

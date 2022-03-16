@@ -2,6 +2,7 @@ defmodule PTAX.Currency do
   @moduledoc "Defines the structure of a currency"
 
   use TypedStruct
+  alias PTAX.Requests
 
   typedstruct enforce: true do
     field :name, binary()
@@ -18,7 +19,9 @@ defmodule PTAX.Currency do
   """
   @spec list :: {:ok, list(t)} | {:error, PTAX.Error.t()}
   def list do
-    with {:ok, value} <- PTAX.Requests.currencies() do
+    result = Requests.get("/Moedas")
+
+    with {:ok, value} <- Requests.response(result) do
       result = Enum.map(value, &parse/1)
 
       {:ok, result}
