@@ -30,7 +30,7 @@ defmodule PTAX.MixProject do
       {:tesla, "~> 1.4"},
       {:tesla_keys, "~> 0.1"},
       {:jason, ">= 1.0.0"},
-      {:typed_struct, "~> 0.2.1"},
+      {:typed_struct, "~> 0.3"},
       {:enum_type, "~> 1.1"},
       {:decimal, "~> 2.0"},
       {:timex, "~> 3.7"},
