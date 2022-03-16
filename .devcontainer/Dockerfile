@@ -11,8 +11,8 @@ ARG USER_GID=$USER_UID
 # Options for common package install script
 ARG INSTALL_ZSH="true"
 ARG UPGRADE_PACKAGES="true"
-ARG COMMON_SCRIPT_SOURCE="https://raw.githubusercontent.com/microsoft/vscode-dev-containers/v0.209.6/script-library/common-debian.sh"
-ARG COMMON_SCRIPT_SHA="d35dd1711454156c9a59cc41ebe04fbff681ca0bd304f10fd5b13285d0de13b2"
+ARG COMMON_SCRIPT_SOURCE="https://raw.githubusercontent.com/microsoft/vscode-dev-containers/v0.224.2/script-library/common-debian.sh"
+ARG COMMON_SCRIPT_SHA="3c3543c8aa1f3adba62ae1a9e204846f8448c4cbfee1bce1edaf2a9fefac85df"
 
 # Install needed packages and setup non-root user. Use a separate RUN statement to add your own dependencies.
 RUN apt-get update \

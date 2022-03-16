@@ -1,0 +1,44 @@
+## "msgid"s in this file come from POT (.pot) files.
+##
+## Do not add, change, or remove "msgid"s manually here as
+## they're tied to the ones in the corresponding POT file
+## (with the same domain).
+##
+## Use "mix gettext.extract --merge" or "mix gettext.merge"
+## to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: en\n"
+
+msgid "Real"
+msgstr "Real"
+
+msgid "Dólar australiano"
+msgstr "Australian Dollar"
+
+msgid "Dólar canadense"
+msgstr "Canadian Dollar"
+
+msgid "Franco suíço"
+msgstr "Swiss Franc"
+
+msgid "Coroa dinamarquesa"
+msgstr "Danish Krone"
+
+msgid "Euro"
+msgstr "Euro"
+
+msgid "Libra Esterlina"
+msgstr "Pound Sterling"
+
+msgid "Iene"
+msgstr "Yen"
+
+msgid "Coroa norueguesa"
+msgstr "Norwegian Krone"
+
+msgid "Coroa sueca"
+msgstr "Swedish Krona"
+
+msgid "Dólar dos Estados Unidos"
+msgstr "US Dollar"

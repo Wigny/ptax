@@ -1,8 +1,9 @@
 defmodule PTAX.Requests do
-  @moduledoc "Realiza requests HTTP para a API PTAX"
+  @moduledoc "Make HTTP requests to the PTAX API"
 
   use Tesla, only: [:get], docs: false
 
+  alias PTAX
   alias PTAX.Error
 
   defguardp is_empty(value) when value == []
@@ -25,19 +26,19 @@ defmodule PTAX.Requests do
     error =
       Error.new(
         code: :not_found,
-        message: "Dados não encontrados para a requisição (verifique se a data é um dia útil)"
+        message: "Data not found (make sure the date is a business day)"
       )
 
     {:error, error}
   end
 
   def response({:ok, %{status: status}}) when is_error(status) do
-    error = Error.new(code: :server_error, message: "Erro desconhecido")
+    error = Error.new(code: :server_error, message: "Unknown error")
     {:error, error}
   end
 
   def response({:error, _error}) do
-    error = Error.new(code: :network_error, message: "Erro ao realizar request")
+    error = Error.new(code: :network_error, message: "Request error")
     {:error, error}
   end
 end

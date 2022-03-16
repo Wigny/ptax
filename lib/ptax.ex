@@ -1,62 +1,62 @@
 defmodule PTAX do
   @moduledoc """
-  Agrega funções de listagem e conversão de moedas suportadas
+  Gathers supported currency listing and conversion functions
   """
 
-  alias PTAX.{Conversor, Cotacao, Error, Moeda}
+  alias PTAX.{Converter, Quotation, Error, Currency}
 
-  @type valor :: Decimal.decimal()
-  @type moeda :: atom()
-  @type operacao :: :compra | :venda
+  @type amount :: Decimal.decimal()
+  @type currency :: atom()
+  @type operation :: :buy | :sell
 
-  @typep converter_opts ::
-           Conversor.opts()
+  @typep convert_opts ::
+           Converter.opts()
            | [
-               de: moeda,
-               para: moeda,
-               data: Date.t() | nil,
-               operacao: operacao | nil,
-               boletim: Cotacao.Boletim.t() | nil
+               from: currency,
+               to: currency,
+               date: Date.t() | nil,
+               operation: operation | nil,
+               bulletin: Quotation.Bolletim.t() | nil
              ]
 
-  @spec moedas :: {:ok, list(Moeda.t())} | {:error, Error.t()}
-  defdelegate moedas, to: Moeda, as: :list
+  @spec currencies :: {:ok, list(Currency.t())} | {:error, Error.t()}
+  defdelegate currencies, to: Currency, as: :list
 
   @doc """
-  Converte um valor de uma moeda para outra
+  Converts a value from one currency to another
 
-  ## Exemplo
+  ## Example
 
-      iex> PTAX.converter(5, de: :USD, para: :BRL, data: ~D[2021-12-24], operacao: :compra, boletim: PTAX.Cotacao.Boletim.Fechamento)
+      iex> PTAX.convert(5, from: :USD, to: :BRL, date: ~D[2021-12-24], operation: :buy, bulletin: PTAX.Quotation.Bulletin.Closing)
       {:ok, #Decimal<28.2705>}
   """
-  @spec converter(valor :: valor, opts :: converter_opts) :: {:ok, valor} | {:error, Error.t()}
-  def converter(valor, opts) when is_list(opts) do
+  @spec convert(amount :: amount, opts :: convert_opts) :: {:ok, amount} | {:error, Error.t()}
+  def convert(amount, opts) when is_list(opts) do
     default_opts = %{
-      data: "America/Sao_Paulo" |> Timex.now() |> Timex.to_date(),
-      operacao: :venda,
-      boletim: Cotacao.Boletim.Fechamento
+      date: "America/Sao_Paulo" |> Timex.now() |> Timex.to_date(),
+      operation: :sell,
+      bulletin: Quotation.Bulletin.Closing
     }
 
     opts = Enum.into(opts, default_opts)
-    converter(valor, opts)
+    convert(amount, opts)
   end
 
-  def converter(valor, opts) when is_map(opts) do
-    Conversor.run(valor, opts)
+  def convert(amount, opts) when is_map(opts) do
+    Converter.run(amount, opts)
   end
 
   @doc """
-  Semelhante a `converter/2`, mas gera um erro se o valor não puder ser convertido.
+  Similar to `convert/2`, but throws an error if the amount cannot be converted.
 
-  ## Exemplo
+  ## Example
 
-      iex> PTAX.converter!(5, de: :USD, para: :BRL, data: ~D[2021-12-24], operacao: :compra, boletim: PTAX.Cotacao.Boletim.Fechamento)
+      iex> PTAX.convert!(5, from: :USD, to: :BRL, date: ~D[2021-12-24], operation: :buy, bulletin: PTAX.Quotation.Bulletin.Closing)
       #Decimal<28.2705>
   """
-  @spec converter!(valor :: valor, opts :: converter_opts) :: valor
-  def converter!(valor, opts) do
-    case converter(valor, opts) do
+  @spec convert!(amount :: amount, opts :: convert_opts) :: amount
+  def convert!(amount, opts) do
+    case convert(amount, opts) do
       {:ok, result} -> result
       {:error, error} -> raise error
     end

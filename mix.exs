@@ -7,6 +7,7 @@ defmodule PTAX.MixProject do
       version: "0.3.2",
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
+      compilers: [:gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
@@ -34,6 +35,7 @@ defmodule PTAX.MixProject do
       {:enum_type, "~> 1.1"},
       {:decimal, "~> 2.0"},
       {:timex, "~> 3.7"},
+      {:gettext, "~> 0.19.0"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.1", only: [:dev], runtime: false}

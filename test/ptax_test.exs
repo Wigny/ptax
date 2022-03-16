@@ -8,16 +8,16 @@ defmodule PTAXTest do
   end
 
   describe "ptax" do
-    test "converter/2 executa a conversão" do
-      opts = [de: :USD, para: :GBP, data: ~D[2021-12-24]]
+    test "convert/2 perform the conversion" do
+      opts = [from: :USD, to: :GBP, date: ~D[2021-12-24]]
 
-      assert {:ok, Decimal.from_float(11.5247)} == PTAX.converter("15.45", opts)
+      assert {:ok, Decimal.from_float(11.5247)} == PTAX.convert("15.45", opts)
     end
 
-    test "converter!/2 lança erro se passado opções inválidas" do
-      opts = [de: :USD, para: :GBPS, data: ~D[2021-12-24]]
+    test "convert!/2 throws error if past invalid options" do
+      opts = [from: :USD, to: :GBPS, date: ~D[2021-12-24]]
 
-      assert_raise PTAX.Error, fn -> PTAX.converter!("15.45", opts) end
+      assert_raise PTAX.Error, fn -> PTAX.convert!("15.45", opts) end
     end
   end
 end
