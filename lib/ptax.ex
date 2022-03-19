@@ -3,7 +3,7 @@ defmodule PTAX do
   Gathers supported currency listing and conversion functions
   """
 
-  alias PTAX.{Converter, Quotation, Error, Currency}
+  alias PTAX.{Converter, Error, Quotation, Requests}
 
   @type amount :: Decimal.decimal()
   @type currency :: atom()
@@ -19,8 +19,24 @@ defmodule PTAX do
                bulletin: Quotation.Bolletim.t() | nil
              ]
 
-  @spec currencies :: {:ok, list(Currency.t())} | {:error, Error.t()}
-  defdelegate currencies, to: Currency, as: :list
+  @doc """
+  Returns a list of supported currencies
+
+  ## Example
+
+      iex> PTAX.currencies()
+      {:ok, ~w[EUR GBP]a}
+  """
+  @spec currencies :: {:ok, list(currency)} | {:error, Error.t()}
+  def currencies do
+    result = Requests.get("/Moedas")
+
+    with {:ok, response} <- Requests.response(result) do
+      currencies = Enum.map(response, &String.to_atom(&1["simbolo"]))
+
+      {:ok, currencies}
+    end
+  end
 
   @doc """
   Converts a value from one currency to another
