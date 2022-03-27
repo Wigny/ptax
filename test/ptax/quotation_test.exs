@@ -1,6 +1,6 @@
-defmodule PTAXTest do
+defmodule PTAX.QuotationTest do
   use ExUnit.Case
-  doctest PTAX
+  doctest PTAX.Quotation
 
   setup do
     PTAX.RequestsFixtures.fixture()

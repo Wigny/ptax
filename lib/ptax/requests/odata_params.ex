@@ -14,10 +14,7 @@ defmodule PTAX.Requests.ODataParams do
   defp build_url(url, []), do: url
 
   defp build_url(url, params) do
-    query =
-      params
-      |> Enum.map(fn {key, value} -> "#{key}='#{value}'" end)
-      |> Enum.join(",")
+    query = Enum.map_join(params, ",", fn {key, value} -> "#{key}='#{value}'" end)
 
     url <> "(#{query})"
   end

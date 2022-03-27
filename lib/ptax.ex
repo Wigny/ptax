@@ -1,66 +1,85 @@
 defmodule PTAX do
   @moduledoc """
-  Agrega funções de listagem e conversão de moedas suportadas
+  Gathers supported currency listing and conversion functions
   """
 
-  alias PTAX.{Conversor, Cotacao, Error, Moeda}
+  alias PTAX.{Error, Money, Quotation, Requests}
 
-  @type valor :: Decimal.decimal()
-  @type moeda :: atom()
-  @type operacao :: :compra | :venda
-
-  @type converter_opts ::
-          Conversor.opts()
-          | [
-              de: moeda,
-              para: moeda,
-              data: Date.t() | nil,
-              operacao: operacao | nil,
-              boletim: Cotacao.Boletim.t() | nil
-            ]
-
-  @spec moedas :: {:ok, list(Moeda.t())} | {:error, Error.t()}
-  defdelegate moedas, to: Moeda, as: :list
+  @typep money :: Money.t()
+  @typep currency :: Money.currency()
+  @typep exchange_opts ::
+           [from: currency, to: currency, date: Date.t()]
+           | %{from: currency, to: currency, date: Date.t()}
+  @typep error :: Error.t()
 
   @doc """
-  Converte um valor de uma moeda para outra
+  Returns a list of supported currencies
 
-  ## Exemplo
+  ## Examples
 
-      iex> PTAX.converter(5, de: :USD, para: :BRL, data: ~D[2021-12-24], operacao: :compra, boletim: PTAX.Cotacao.Boletim.Fechamento)
-      {:ok, #Decimal<28.2705>}
+      iex> PTAX.currencies()
+      {:ok, ~w[GBP USD]a}
   """
-  @spec converter(
-          valor :: valor,
-          opts :: converter_opts
-        ) :: {:ok, Decimal.t()} | {:error, Error.t()}
+  @spec currencies :: {:ok, list(currency)} | {:error, Error.t()}
+  def currencies do
+    result = Requests.get("/Moedas")
 
-  def converter(valor, opts) when is_list(opts) do
-    default_opts = %{
-      data: "America/Sao_Paulo" |> Timex.now() |> Timex.to_date(),
-      operacao: :venda,
-      boletim: Cotacao.Boletim.Fechamento
-    }
+    with {:ok, response} <- Requests.response(result) do
+      currencies = Enum.map(response, &String.to_atom(&1["simbolo"]))
 
-    opts = Enum.into(opts, default_opts)
-    converter(valor, opts)
-  end
-
-  def converter(valor, opts) when is_map(opts) do
-    Conversor.run(valor, opts)
+      {:ok, currencies}
+    end
   end
 
   @doc """
-  Semelhante a `converter/2`, mas gera um erro se o valor não puder ser convertido.
+  Converts a value from one currency to another
 
-  ## Exemplo
+  ## Examples
 
-      iex> PTAX.converter!(5, de: :USD, para: :BRL, data: ~D[2021-12-24], operacao: :compra, boletim: PTAX.Cotacao.Boletim.Fechamento)
-      #Decimal<28.2705>
+      iex> PTAX.exchange(PTAX.Money.new(5, :USD), to: :GBP, date: ~D[2021-12-24])
+      {:ok, PTAX.Money.new(3.7264, :GBP)}
   """
-  @spec converter!(valor :: valor, opts :: converter_opts) :: Decimal.t()
-  def converter!(valor, opts) do
-    case converter(valor, opts) do
+
+  @spec exchange(money, opts :: exchange_opts) :: {:ok, money} | {:error, error}
+  def exchange(money, opts) when is_list(opts) do
+    exchange(money, Map.new(opts))
+  end
+
+  def exchange(%{currency: :BRL} = money, %{to: currency, date: date}) do
+    with {:ok, %{ask: rate}} <- Quotation.get(currency, date) do
+      {:ok, Money.exchange!(money, to: currency, rate: rate)}
+    end
+  end
+
+  def exchange(%{currency: currency} = money, %{to: :BRL, date: date}) do
+    with {:ok, %{bid: rate}} <- Quotation.get(currency, date) do
+      {:ok, Money.exchange!(money, to: :BRL, rate: rate)}
+    end
+  end
+
+  def exchange(money, opts) when is_map(opts) do
+    with {:ok, base_money} <- exchange(money, %{opts | to: :BRL}) do
+      exchange(base_money, opts)
+    end
+  end
+
+  @doc """
+  Similar to `exchange/2`, but throws an error if the amount cannot be converted.
+
+  ## Examples
+
+      iex> PTAX.exchange!(PTAX.Money.new(15, :USD), to: :BRL, date: ~D[2021-12-24])
+      PTAX.Money.new(84.8115, :BRL)
+
+      iex> PTAX.exchange!(PTAX.Money.new(15.45, :USD), to: :GBP, date: ~D[2021-12-24])
+      PTAX.Money.new(11.5145, :GBP)
+
+      iex> PTAX.exchange!(PTAX.Money.new(15.45, :USD), to: :GBPS, date: ~D[2021-12-24])
+      ** (PTAX.Error) Unknown error
+  """
+  @spec exchange!(money, opts :: exchange_opts) :: money
+  def exchange!(money, opts) do
+    case exchange(money, opts) do
       {:ok, result} -> result
       {:error, error} -> raise error
     end
