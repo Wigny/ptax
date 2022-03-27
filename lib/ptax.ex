@@ -3,29 +3,35 @@ defmodule PTAX do
   Gathers supported currency listing and conversion functions
   """
 
-  alias PTAX.{Converter, Error, Quotation, Requests}
+  alias PTAX.{Error, Money, Quotation, Requests}
 
-  @type amount :: Decimal.decimal()
-  @type currency :: atom()
-  @type operation :: :buy | :sell
-
-  @typep convert_opts ::
-           Converter.opts()
-           | [
+  @typep money :: Money.t()
+  @typep currency :: Money.currency()
+  @typep operation :: :buy | :sell
+  @typep exchange_opts ::
+           [
+             from: currency,
+             to: currency,
+             date: Date.t() | nil,
+             operation: operation | nil,
+             bulletin: Quotation.Bolletim.t() | nil
+           ]
+           | %{
                from: currency,
                to: currency,
-               date: Date.t() | nil,
-               operation: operation | nil,
-               bulletin: Quotation.Bolletim.t() | nil
-             ]
+               date: Date.t(),
+               operation: operation,
+               bulletin: Quotation.Bulletin.t()
+             }
+  @typep error :: Error.t()
 
   @doc """
   Returns a list of supported currencies
 
-  ## Example
+  ## Examples
 
       iex> PTAX.currencies()
-      {:ok, ~w[EUR GBP]a}
+      {:ok, ~w[GBP USD]a}
   """
   @spec currencies :: {:ok, list(currency)} | {:error, Error.t()}
   def currencies do
@@ -41,13 +47,14 @@ defmodule PTAX do
   @doc """
   Converts a value from one currency to another
 
-  ## Example
+  ## Examples
 
-      iex> PTAX.convert(5, from: :USD, to: :BRL, date: ~D[2021-12-24], operation: :buy, bulletin: PTAX.Quotation.Bulletin.Closing)
-      {:ok, #Decimal<28.2705>}
+      iex> PTAX.exchange(PTAX.Money.new(5, :USD), to: :GBP, date: ~D[2021-12-24], operation: :buy, bulletin: PTAX.Quotation.Bulletin.Closing)
+      {:ok, PTAX.Money.new(3.7308, :GBP)}
   """
-  @spec convert(amount :: amount, opts :: convert_opts) :: {:ok, amount} | {:error, Error.t()}
-  def convert(amount, opts) when is_list(opts) do
+
+  @spec exchange(money, opts :: exchange_opts) :: {:ok, money} | {:error, error}
+  def exchange(money, opts) when is_list(opts) do
     default_opts = %{
       date: "America/Sao_Paulo" |> Timex.now() |> Timex.to_date(),
       operation: :sell,
@@ -55,24 +62,50 @@ defmodule PTAX do
     }
 
     opts = Enum.into(opts, default_opts)
-    convert(amount, opts)
+    exchange(money, opts)
   end
 
-  def convert(amount, opts) when is_map(opts) do
-    Converter.run(amount, opts)
+  def exchange(%{currency: :BRL} = money, %{to: currency} = opts) do
+    %{date: date, operation: operation, bulletin: bulletin} = opts
+
+    with {:ok, quotation} <- Quotation.get(currency, date, bulletin) do
+      %{^operation => rate} = quotation
+      {:ok, Money.exchange!(money, to: currency, rate: rate)}
+    end
+  end
+
+  def exchange(%{currency: currency} = money, %{to: :BRL} = opts) do
+    %{date: date, operation: operation, bulletin: bulletin} = opts
+
+    with {:ok, quotation} <- Quotation.get(currency, date, bulletin) do
+      %{^operation => rate} = quotation
+      {:ok, Money.exchange!(money, to: :BRL, rate: rate)}
+    end
+  end
+
+  def exchange(money, opts) when is_map(opts) do
+    with {:ok, base_money} <- exchange(money, %{opts | to: :BRL}) do
+      exchange(base_money, opts)
+    end
   end
 
   @doc """
-  Similar to `convert/2`, but throws an error if the amount cannot be converted.
+  Similar to `exchange/2`, but throws an error if the amount cannot be converted.
 
-  ## Example
+  ## Examples
 
-      iex> PTAX.convert!(5, from: :USD, to: :BRL, date: ~D[2021-12-24], operation: :buy, bulletin: PTAX.Quotation.Bulletin.Closing)
-      #Decimal<28.2705>
+      iex> PTAX.exchange!(PTAX.Money.new(15, :USD), to: :BRL, date: ~D[2021-12-24], operation: :buy, bulletin: PTAX.Quotation.Bulletin.Closing)
+      PTAX.Money.new(84.8115, :BRL)
+
+      iex> PTAX.exchange!(PTAX.Money.new(15.45, :USD), to: :GBP, date: ~D[2021-12-24])
+      PTAX.Money.new(11.5247, :GBP)
+
+      iex> PTAX.exchange!(PTAX.Money.new(15.45, :USD), to: :GBPS, date: ~D[2021-12-24])
+      ** (PTAX.Error) Unknown error
   """
-  @spec convert!(amount :: amount, opts :: convert_opts) :: amount
-  def convert!(amount, opts) do
-    case convert(amount, opts) do
+  @spec exchange!(money, opts :: exchange_opts) :: money
+  def exchange!(money, opts) do
+    case exchange(money, opts) do
       {:ok, result} -> result
       {:error, error} -> raise error
     end

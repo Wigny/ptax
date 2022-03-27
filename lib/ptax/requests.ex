@@ -23,12 +23,7 @@ defmodule PTAX.Requests do
   end
 
   def response({:ok, %{status: status}}) when is_success(status) do
-    error =
-      Error.new(
-        code: :not_found,
-        message: "Data not found (make sure the date is a business day)"
-      )
-
+    error = Error.new(code: :not_found, message: "Data not found")
     {:error, error}
   end
 

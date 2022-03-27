@@ -4,7 +4,12 @@ defmodule PTAX.Quotation do
   use TypedStruct
   use EnumType
 
-  alias PTAX.{Error, Requests}
+  alias PTAX.{Error, Money, Requests}
+
+  @typep currency :: Money.currency()
+  @typep date :: Date.t()
+  @typep period :: Date.Range.t()
+  @typep bulletin :: Bulletin.t()
 
   defenum Bulletin do
     value Opening, "Abertura"
@@ -13,18 +18,29 @@ defmodule PTAX.Quotation do
   end
 
   typedstruct enforce: true do
-    field :buy, PTAX.amount()
-    field :sell, PTAX.amount()
+    field :buy, Money.t()
+    field :sell, Money.t()
     field :quoted_in, DateTime.t()
     field :bulletin, Bulletin.t()
   end
 
-  @doc "Returns the quotation of a currency for a date"
-  @spec get(
-          currency :: PTAX.currency(),
-          date :: Date.t(),
-          bulletin :: Bulletin.t() | nil
-        ) :: {:ok, t()} | {:error, Error.t()}
+  @doc """
+  Returns the quotation of a currency for the date
+
+  ## Examples
+
+      iex> PTAX.Quotation.get(:USD, ~D[2021-12-24])
+      {
+        :ok,
+        %PTAX.Quotation{
+          buy: PTAX.Money.new(5.6541, :BRL),
+          sell: PTAX.Money.new(5.6591, :BRL),
+          quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.178], "America/Sao_Paulo"),
+          bulletin: PTAX.Quotation.Bulletin.Closing
+        }
+      }
+  """
+  @spec get(currency, date, bulletin | nil) :: {:ok, t()} | {:error, Error.t()}
   def get(currency, date, bulletin \\ Bulletin.Closing) do
     period = Date.range(date, date)
 
@@ -46,11 +62,53 @@ defmodule PTAX.Quotation do
     end
   end
 
-  @doc "Returns a quotation list of a currency for a period"
+  @doc """
+  Returns a quotation list of a currency for a period
+
+  ## Examples
+
+      iex> PTAX.Quotation.list(:GBP, Date.range(~D[2021-12-24], ~D[2021-12-24]))
+      {
+        :ok,
+        [
+         %PTAX.Quotation{
+           buy: PTAX.Money.new(7.5605, :BRL),
+           sell: PTAX.Money.new(7.5669, :BRL),
+           quoted_in: DateTime.from_naive!(~N[2021-12-24 10:08:31.922], "America/Sao_Paulo"),
+           bulletin: PTAX.Quotation.Bulletin.Opening
+         },
+         %PTAX.Quotation{
+           buy: PTAX.Money.new(7.6032, :BRL),
+           sell: PTAX.Money.new(7.6147, :BRL),
+           quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.173], "America/Sao_Paulo"),
+           bulletin: PTAX.Quotation.Bulletin.Intermediary
+         },
+         %PTAX.Quotation{
+           buy: PTAX.Money.new(7.5776, :BRL),
+           sell: PTAX.Money.new(7.5866, :BRL),
+           quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.178], "America/Sao_Paulo"),
+           bulletin: PTAX.Quotation.Bulletin.Closing
+         }
+        ]
+      }
+
+      iex> PTAX.Quotation.list(:GBP, Date.range(~D[2021-12-24], ~D[2021-12-24]), PTAX.Quotation.Bulletin.Opening)
+      {
+        :ok,
+        [
+         %PTAX.Quotation{
+           buy: PTAX.Money.new(7.5605, :BRL),
+           sell: PTAX.Money.new(7.5669, :BRL),
+           quoted_in: DateTime.from_naive!(~N[2021-12-24 10:08:31.922], "America/Sao_Paulo"),
+           bulletin: PTAX.Quotation.Bulletin.Opening
+         }
+        ]
+      }
+  """
   @spec list(
-          currency :: PTAX.currency(),
-          period :: Date.Range.t(),
-          bulletin :: Bulletin.t() | nil
+          currency,
+          period,
+          bulletin | list(bulletin) | nil
         ) :: {:ok, list(t)} | {:error, Error.t()}
   def list(currency, period, bulletin \\ nil) do
     params = [
@@ -68,20 +126,16 @@ defmodule PTAX.Quotation do
     end
   end
 
-  defp parse(%{
-         "cotacao_compra" => buy,
-         "cotacao_venda" => sell,
-         "data_hora_cotacao" => quoted_in,
-         "tipo_boletim" => bulletin
-       }) do
+  defp parse(value) do
     params = %{
-      buy: Decimal.from_float(buy),
-      sell: Decimal.from_float(sell),
+      buy: Money.new(value["cotacao_compra"]),
+      sell: Money.new(value["cotacao_venda"]),
       quoted_in:
-        quoted_in
+        value
+        |> Map.get("data_hora_cotacao")
         |> Timex.parse!("{ISO:Extended}")
         |> Timex.Timezone.convert("America/Sao_Paulo"),
-      bulletin: Bulletin.from(bulletin)
+      bulletin: Bulletin.from(value["tipo_boletim"])
     }
 
     struct!(__MODULE__, params)
