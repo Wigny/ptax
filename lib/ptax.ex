@@ -7,7 +7,7 @@ defmodule PTAX do
 
   @typep money :: Money.t()
   @typep currency :: Money.currency()
-  @typep operation :: :buy | :sell
+  @typep operation :: :bid | :ask
   @typep exchange_opts ::
            [
              from: currency,
@@ -49,7 +49,7 @@ defmodule PTAX do
 
   ## Examples
 
-      iex> PTAX.exchange(PTAX.Money.new(5, :USD), to: :GBP, date: ~D[2021-12-24], operation: :buy, bulletin: PTAX.Quotation.Bulletin.Closing)
+      iex> PTAX.exchange(PTAX.Money.new(5, :USD), to: :GBP, date: ~D[2021-12-24], operation: :bid, bulletin: PTAX.Quotation.Bulletin.Closing)
       {:ok, PTAX.Money.new(3.7308, :GBP)}
   """
 
@@ -57,7 +57,7 @@ defmodule PTAX do
   def exchange(money, opts) when is_list(opts) do
     default_opts = %{
       date: "America/Sao_Paulo" |> Timex.now() |> Timex.to_date(),
-      operation: :sell,
+      operation: :ask,
       bulletin: Quotation.Bulletin.Closing
     }
 
@@ -94,7 +94,7 @@ defmodule PTAX do
 
   ## Examples
 
-      iex> PTAX.exchange!(PTAX.Money.new(15, :USD), to: :BRL, date: ~D[2021-12-24], operation: :buy, bulletin: PTAX.Quotation.Bulletin.Closing)
+      iex> PTAX.exchange!(PTAX.Money.new(15, :USD), to: :BRL, date: ~D[2021-12-24], operation: :bid, bulletin: PTAX.Quotation.Bulletin.Closing)
       PTAX.Money.new(84.8115, :BRL)
 
       iex> PTAX.exchange!(PTAX.Money.new(15.45, :USD), to: :GBP, date: ~D[2021-12-24])

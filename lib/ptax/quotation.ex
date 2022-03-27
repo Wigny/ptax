@@ -18,8 +18,8 @@ defmodule PTAX.Quotation do
   end
 
   typedstruct enforce: true do
-    field :buy, Money.t()
-    field :sell, Money.t()
+    field :bid, Money.t()
+    field :ask, Money.t()
     field :quoted_in, DateTime.t()
     field :bulletin, Bulletin.t()
   end
@@ -33,8 +33,8 @@ defmodule PTAX.Quotation do
       {
         :ok,
         %PTAX.Quotation{
-          buy: PTAX.Money.new(5.6541, :BRL),
-          sell: PTAX.Money.new(5.6591, :BRL),
+          bid: PTAX.Money.new(5.6541, :BRL),
+          ask: PTAX.Money.new(5.6591, :BRL),
           quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.178], "America/Sao_Paulo"),
           bulletin: PTAX.Quotation.Bulletin.Closing
         }
@@ -72,20 +72,20 @@ defmodule PTAX.Quotation do
         :ok,
         [
          %PTAX.Quotation{
-           buy: PTAX.Money.new(7.5605, :BRL),
-           sell: PTAX.Money.new(7.5669, :BRL),
+           bid: PTAX.Money.new(7.5605, :BRL),
+           ask: PTAX.Money.new(7.5669, :BRL),
            quoted_in: DateTime.from_naive!(~N[2021-12-24 10:08:31.922], "America/Sao_Paulo"),
            bulletin: PTAX.Quotation.Bulletin.Opening
          },
          %PTAX.Quotation{
-           buy: PTAX.Money.new(7.6032, :BRL),
-           sell: PTAX.Money.new(7.6147, :BRL),
+           bid: PTAX.Money.new(7.6032, :BRL),
+           ask: PTAX.Money.new(7.6147, :BRL),
            quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.173], "America/Sao_Paulo"),
            bulletin: PTAX.Quotation.Bulletin.Intermediary
          },
          %PTAX.Quotation{
-           buy: PTAX.Money.new(7.5776, :BRL),
-           sell: PTAX.Money.new(7.5866, :BRL),
+           bid: PTAX.Money.new(7.5776, :BRL),
+           ask: PTAX.Money.new(7.5866, :BRL),
            quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.178], "America/Sao_Paulo"),
            bulletin: PTAX.Quotation.Bulletin.Closing
          }
@@ -97,8 +97,8 @@ defmodule PTAX.Quotation do
         :ok,
         [
          %PTAX.Quotation{
-           buy: PTAX.Money.new(7.5605, :BRL),
-           sell: PTAX.Money.new(7.5669, :BRL),
+           bid: PTAX.Money.new(7.5605, :BRL),
+           ask: PTAX.Money.new(7.5669, :BRL),
            quoted_in: DateTime.from_naive!(~N[2021-12-24 10:08:31.922], "America/Sao_Paulo"),
            bulletin: PTAX.Quotation.Bulletin.Opening
          }
@@ -128,8 +128,8 @@ defmodule PTAX.Quotation do
 
   defp parse(value) do
     params = %{
-      buy: Money.new(value["cotacao_compra"]),
-      sell: Money.new(value["cotacao_venda"]),
+      bid: Money.new(value["cotacao_compra"]),
+      ask: Money.new(value["cotacao_venda"]),
       quoted_in:
         value
         |> Map.get("data_hora_cotacao")
