@@ -7,22 +7,9 @@ defmodule PTAX do
 
   @typep money :: Money.t()
   @typep currency :: Money.currency()
-  @typep operation :: :bid | :ask
   @typep exchange_opts ::
-           [
-             from: currency,
-             to: currency,
-             date: Date.t() | nil,
-             operation: operation | nil,
-             bulletin: Quotation.Bolletim.t() | nil
-           ]
-           | %{
-               from: currency,
-               to: currency,
-               date: Date.t(),
-               operation: operation,
-               bulletin: Quotation.Bulletin.t()
-             }
+           [from: currency, to: currency, date: Date.t()]
+           | %{from: currency, to: currency, date: Date.t()}
   @typep error :: Error.t()
 
   @doc """
@@ -49,36 +36,23 @@ defmodule PTAX do
 
   ## Examples
 
-      iex> PTAX.exchange(PTAX.Money.new(5, :USD), to: :GBP, date: ~D[2021-12-24], operation: :bid, bulletin: PTAX.Quotation.Bulletin.Closing)
-      {:ok, PTAX.Money.new(3.7308, :GBP)}
+      iex> PTAX.exchange(PTAX.Money.new(5, :USD), to: :GBP, date: ~D[2021-12-24])
+      {:ok, PTAX.Money.new(3.7264, :GBP)}
   """
 
   @spec exchange(money, opts :: exchange_opts) :: {:ok, money} | {:error, error}
   def exchange(money, opts) when is_list(opts) do
-    default_opts = %{
-      date: "America/Sao_Paulo" |> Timex.now() |> Timex.to_date(),
-      operation: :ask,
-      bulletin: Quotation.Bulletin.Closing
-    }
-
-    opts = Enum.into(opts, default_opts)
-    exchange(money, opts)
+    exchange(money, Map.new(opts))
   end
 
-  def exchange(%{currency: :BRL} = money, %{to: currency} = opts) do
-    %{date: date, operation: operation, bulletin: bulletin} = opts
-
-    with {:ok, quotation} <- Quotation.get(currency, date, bulletin) do
-      %{^operation => rate} = quotation
+  def exchange(%{currency: :BRL} = money, %{to: currency, date: date}) do
+    with {:ok, %{ask: rate}} <- Quotation.get(currency, date) do
       {:ok, Money.exchange!(money, to: currency, rate: rate)}
     end
   end
 
-  def exchange(%{currency: currency} = money, %{to: :BRL} = opts) do
-    %{date: date, operation: operation, bulletin: bulletin} = opts
-
-    with {:ok, quotation} <- Quotation.get(currency, date, bulletin) do
-      %{^operation => rate} = quotation
+  def exchange(%{currency: currency} = money, %{to: :BRL, date: date}) do
+    with {:ok, %{bid: rate}} <- Quotation.get(currency, date) do
       {:ok, Money.exchange!(money, to: :BRL, rate: rate)}
     end
   end
@@ -94,11 +68,11 @@ defmodule PTAX do
 
   ## Examples
 
-      iex> PTAX.exchange!(PTAX.Money.new(15, :USD), to: :BRL, date: ~D[2021-12-24], operation: :bid, bulletin: PTAX.Quotation.Bulletin.Closing)
+      iex> PTAX.exchange!(PTAX.Money.new(15, :USD), to: :BRL, date: ~D[2021-12-24])
       PTAX.Money.new(84.8115, :BRL)
 
       iex> PTAX.exchange!(PTAX.Money.new(15.45, :USD), to: :GBP, date: ~D[2021-12-24])
-      PTAX.Money.new(11.5247, :GBP)
+      PTAX.Money.new(11.5145, :GBP)
 
       iex> PTAX.exchange!(PTAX.Money.new(15.45, :USD), to: :GBPS, date: ~D[2021-12-24])
       ** (PTAX.Error) Unknown error

@@ -69,7 +69,7 @@ defmodule PTAX.Money do
   def exchange!(%{currency: currency} = money, to: to, rate: %{currency: currency} = rate) do
     money.amount
     |> Decimal.div(rate.amount)
-    |> Decimal.round(4)
+    |> Decimal.round(4, :up)
     |> Decimal.normalize()
     |> new(to)
   end
@@ -77,7 +77,7 @@ defmodule PTAX.Money do
   def exchange!(money, to: to, rate: %{currency: to} = rate) do
     money.amount
     |> Decimal.mult(rate.amount)
-    |> Decimal.round(4)
+    |> Decimal.round(4, :up)
     |> Decimal.normalize()
     |> new(to)
   end
