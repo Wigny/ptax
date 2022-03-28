@@ -18,10 +18,12 @@ defmodule PTAX.Quotation do
   end
 
   typedstruct enforce: true do
+    field :currency, currency
     field :bid, Money.t()
     field :ask, Money.t()
+    field :pairs, %{bid: Money.Pair.t(), ask: Money.Pair.t(), type: atom}
     field :quoted_in, DateTime.t()
-    field :bulletin, Bulletin.t()
+    field :bulletin, bulletin
   end
 
   @doc """
@@ -33,8 +35,14 @@ defmodule PTAX.Quotation do
       {
         :ok,
         %PTAX.Quotation{
+          currency: :USD,
           bid: PTAX.Money.new(5.6541, :BRL),
           ask: PTAX.Money.new(5.6591, :BRL),
+          pairs: %{
+            type: :A,
+            bid: PTAX.Money.Pair.new(1.0, :USD, :USD),
+            ask: PTAX.Money.Pair.new(1.0, :USD, :USD)
+          },
           quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.178], "America/Sao_Paulo"),
           bulletin: PTAX.Quotation.Bulletin.Closing
         }
@@ -71,24 +79,42 @@ defmodule PTAX.Quotation do
       {
         :ok,
         [
-         %PTAX.Quotation{
-           bid: PTAX.Money.new(7.5605, :BRL),
-           ask: PTAX.Money.new(7.5669, :BRL),
-           quoted_in: DateTime.from_naive!(~N[2021-12-24 10:08:31.922], "America/Sao_Paulo"),
-           bulletin: PTAX.Quotation.Bulletin.Opening
-         },
-         %PTAX.Quotation{
-           bid: PTAX.Money.new(7.6032, :BRL),
-           ask: PTAX.Money.new(7.6147, :BRL),
-           quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.173], "America/Sao_Paulo"),
-           bulletin: PTAX.Quotation.Bulletin.Intermediary
-         },
-         %PTAX.Quotation{
-           bid: PTAX.Money.new(7.5776, :BRL),
-           ask: PTAX.Money.new(7.5866, :BRL),
-           quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.178], "America/Sao_Paulo"),
-           bulletin: PTAX.Quotation.Bulletin.Closing
-         }
+          %PTAX.Quotation{
+            currency: :GBP,
+            bid: PTAX.Money.new(7.5605, :BRL),
+            ask: PTAX.Money.new(7.5669, :BRL),
+            pairs: %{
+              type: :B,
+              bid: PTAX.Money.Pair.new(1.3417, :GBP, :USD),
+              ask: PTAX.Money.Pair.new(1.3421, :GBP, :USD)
+            },
+            quoted_in: DateTime.from_naive!(~N[2021-12-24 10:08:31.922], "America/Sao_Paulo"),
+            bulletin: PTAX.Quotation.Bulletin.Opening
+          },
+          %PTAX.Quotation{
+            currency: :GBP,
+            bid: PTAX.Money.new(7.6032, :BRL),
+            ask: PTAX.Money.new(7.6147, :BRL),
+            pairs: %{
+              type: :B,
+              bid: PTAX.Money.Pair.new(1.3402, :GBP, :USD),
+              ask: PTAX.Money.Pair.new(1.3406, :GBP, :USD)
+            },
+            quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.173], "America/Sao_Paulo"),
+            bulletin: PTAX.Quotation.Bulletin.Intermediary
+          },
+          %PTAX.Quotation{
+            currency: :GBP,
+            bid: PTAX.Money.new(7.5776, :BRL),
+            ask: PTAX.Money.new(7.5866, :BRL),
+            pairs: %{
+              type: :B,
+              bid: PTAX.Money.Pair.new(1.3402, :GBP, :USD),
+              ask: PTAX.Money.Pair.new(1.3406, :GBP, :USD)
+            },
+            quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.178], "America/Sao_Paulo"),
+            bulletin: PTAX.Quotation.Bulletin.Closing
+          }
         ]
       }
 
@@ -96,12 +122,18 @@ defmodule PTAX.Quotation do
       {
         :ok,
         [
-         %PTAX.Quotation{
-           bid: PTAX.Money.new(7.5605, :BRL),
-           ask: PTAX.Money.new(7.5669, :BRL),
-           quoted_in: DateTime.from_naive!(~N[2021-12-24 10:08:31.922], "America/Sao_Paulo"),
-           bulletin: PTAX.Quotation.Bulletin.Opening
-         }
+          %PTAX.Quotation{
+            currency: :GBP,
+            bid: PTAX.Money.new(7.5605, :BRL),
+            ask: PTAX.Money.new(7.5669, :BRL),
+            pairs: %{
+              type: :B,
+              bid: PTAX.Money.Pair.new(1.3417, :GBP, :USD),
+              ask: PTAX.Money.Pair.new(1.3421, :GBP, :USD)
+            },
+            quoted_in: DateTime.from_naive!(~N[2021-12-24 10:08:31.922], "America/Sao_Paulo"),
+            bulletin: PTAX.Quotation.Bulletin.Opening
+          }
         ]
       }
   """
@@ -117,25 +149,48 @@ defmodule PTAX.Quotation do
       {"dataFinalCotacao", Timex.format!(period.last, "%m-%d-%Y", :strftime)}
     ]
 
-    result = Requests.get("/CotacaoMoedaPeriodo", opts: [odata_params: params])
+    quotation_request = Requests.get("/CotacaoMoedaPeriodo", opts: [odata_params: params])
 
-    with {:ok, value} <- Requests.response(result) do
-      result = value |> Enum.map(&parse/1) |> filter(bulletin)
+    with {:ok, quotation} <- Requests.response(quotation_request) do
+      {:ok, [currency]} =
+        "/Moedas?$filter=simbolo%20eq%20':currency'"
+        |> Requests.get(opts: [path_params: [currency: currency]])
+        |> Requests.response()
+
+      result =
+        quotation
+        |> Enum.map(&parse(&1, currency))
+        |> filter(bulletin)
 
       {:ok, result}
     end
   end
 
-  defp parse(value) do
+  defp parse(quotation, currency) do
+    currency_symbol = String.to_existing_atom(currency["simbolo"])
+    currency_type = String.to_existing_atom(currency["tipo_moeda"])
+
+    {base_currency, quoted_currency} =
+      case currency_type do
+        :A -> {:USD, currency_symbol}
+        :B -> {currency_symbol, :USD}
+      end
+
     params = %{
-      bid: Money.new(value["cotacao_compra"]),
-      ask: Money.new(value["cotacao_venda"]),
+      currency: currency_symbol,
+      bid: Money.new(quotation["cotacao_compra"]),
+      ask: Money.new(quotation["cotacao_venda"]),
+      pairs: %{
+        type: currency_type,
+        bid: Money.Pair.new(quotation["paridade_compra"], base_currency, quoted_currency),
+        ask: Money.Pair.new(quotation["paridade_venda"], base_currency, quoted_currency)
+      },
       quoted_in:
-        value
+        quotation
         |> Map.get("data_hora_cotacao")
         |> Timex.parse!("{ISO:Extended}")
         |> Timex.Timezone.convert("America/Sao_Paulo"),
-      bulletin: Bulletin.from(value["tipo_boletim"])
+      bulletin: Bulletin.from(quotation["tipo_boletim"])
     }
 
     struct!(__MODULE__, params)

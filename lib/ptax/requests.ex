@@ -13,6 +13,7 @@ defmodule PTAX.Requests do
   plug Tesla.Middleware.BaseUrl, "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata"
   plug Tesla.Middleware.Query, [{"$format", "json"}]
   plug PTAX.Requests.ODataParams
+  plug Tesla.Middleware.PathParams
   plug TeslaKeys.Middleware.Case
   plug Tesla.Middleware.JSON
 
