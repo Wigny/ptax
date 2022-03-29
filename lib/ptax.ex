@@ -7,9 +7,7 @@ defmodule PTAX do
 
   @typep money :: Money.t()
   @typep currency :: Money.currency()
-  @typep exchange_opts ::
-           [from: currency, to: currency, date: Date.t()]
-           | %{from: currency, to: currency, date: Date.t()}
+  @typep exchange_opts :: [to: currency, date: Date.t()] | %{to: currency, date: Date.t()}
   @typep error :: Error.t()
 
   @doc """

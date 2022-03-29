@@ -16,7 +16,7 @@ defmodule PTAX.Money do
   @doc """
   Create a new `Money` given the amount and currency.
 
-  Examples:
+  ## Examples:
 
       iex> PTAX.Money.new(10)
       %PTAX.Money{amount: Decimal.new(10), currency: :BRL}
@@ -45,7 +45,7 @@ defmodule PTAX.Money do
   @doc """
   Exchange from a currency to another given the rate.
 
-  Examples:
+  ## Examples:
 
       iex> PTAX.Money.exchange!(PTAX.Money.new("12.75", :USD), to: :BRL, rate: PTAX.Money.new(5, :BRL))
       %PTAX.Money{amount: Decimal.new("63.75"), currency: :BRL}

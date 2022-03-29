@@ -1,4 +1,6 @@
 defmodule PTAX.Money.Pair do
+  @moduledoc "Defines a `Currency Pair` structure."
+
   use TypedStruct
   import Decimal, only: [is_decimal: 1]
   alias PTAX.Money
@@ -12,7 +14,7 @@ defmodule PTAX.Money.Pair do
   @doc """
   Create a new currency pair.
 
-  Examples:
+  ## Examples:
 
       iex> PTAX.Money.Pair.new(2, :GBP, :USD)
       %PTAX.Money.Pair{amount: Decimal.new(2), base_currency: :GBP, quoted_currency: :USD}
