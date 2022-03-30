@@ -159,16 +159,16 @@ defmodule PTAX.Quotation do
 
       result =
         quotation
-        |> Enum.map(&parse(&1, currency))
+        |> Enum.map(&(&1 |> Map.merge(currency) |> parse()))
         |> filter(bulletin)
 
       {:ok, result}
     end
   end
 
-  defp parse(quotation, currency) do
-    currency_symbol = String.to_existing_atom(currency["simbolo"])
-    currency_type = String.to_existing_atom(currency["tipo_moeda"])
+  defp parse(value) do
+    currency_symbol = String.to_existing_atom(value["simbolo"])
+    currency_type = String.to_existing_atom(value["tipo_moeda"])
 
     {base_currency, quoted_currency} =
       case currency_type do
@@ -178,19 +178,19 @@ defmodule PTAX.Quotation do
 
     params = %{
       currency: currency_symbol,
-      bid: Money.new(quotation["cotacao_compra"]),
-      ask: Money.new(quotation["cotacao_venda"]),
+      bid: Money.new(value["cotacao_compra"]),
+      ask: Money.new(value["cotacao_venda"]),
       pairs: %{
         type: currency_type,
-        bid: Money.Pair.new(quotation["paridade_compra"], base_currency, quoted_currency),
-        ask: Money.Pair.new(quotation["paridade_venda"], base_currency, quoted_currency)
+        bid: Money.Pair.new(value["paridade_compra"], base_currency, quoted_currency),
+        ask: Money.Pair.new(value["paridade_venda"], base_currency, quoted_currency)
       },
       quoted_in:
-        quotation
+        value
         |> Map.get("data_hora_cotacao")
         |> Timex.parse!("{ISO:Extended}")
         |> Timex.Timezone.convert("America/Sao_Paulo"),
-      bulletin: Bulletin.from(quotation["tipo_boletim"])
+      bulletin: Bulletin.from(value["tipo_boletim"])
     }
 
     struct!(__MODULE__, params)

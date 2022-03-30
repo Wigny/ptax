@@ -3,7 +3,6 @@ defmodule PTAX.Money do
 
   use TypedStruct
   import Decimal, only: [is_decimal: 1]
-  alias PTAX.Error
   alias PTAX.Money.Pair
 
   @type currency :: atom()
@@ -47,57 +46,40 @@ defmodule PTAX.Money do
 
   ## Examples:
 
-      iex> PTAX.Money.exchange!(PTAX.Money.new("12.75", :USD), to: :BRL, rate: PTAX.Money.new(5, :BRL))
+      iex> PTAX.Money.exchange!(PTAX.Money.new("12.75", :USD), PTAX.Money.Pair.new(5, :USD, :BRL))
       %PTAX.Money{amount: Decimal.new("63.75"), currency: :BRL}
 
-      iex> PTAX.Money.exchange!(PTAX.Money.new(10), to: :USD, rate: PTAX.Money.new(5, :BRL))
-      %PTAX.Money{amount: Decimal.new(2), currency: :USD}
+      iex> PTAX.Money.exchange!(PTAX.Money.new("12.75", :USD), PTAX.Money.Pair.new(0.2, :BRL, :USD))
+      %PTAX.Money{amount: Decimal.new("63.75"), currency: :BRL}
 
-      iex> PTAX.Money.exchange!(PTAX.Money.new(10), to: :USD, rate: PTAX.Money.new("0.2", :USD))
-      %PTAX.Money{amount: Decimal.new("2.0"), currency: :USD}
-
-      iex> PTAX.Money.exchange!(PTAX.Money.new(123, :GBP), to: :GBP, rate: PTAX.Money.new("1", :GBP))
-      ** (PTAX.Error) Cannot exchange to the same currency!
-
-      iex> PTAX.Money.exchange!(PTAX.Money.new(1, :USD), to: :GBP, rate: PTAX.Money.new(2, :USD))
+      iex> PTAX.Money.exchange!(PTAX.Money.new(1, :USD), PTAX.Money.Pair.new(2, :GBP, :USD))
       %PTAX.Money{amount: Decimal.new("0.5"), currency: :GBP}
 
-      iex> PTAX.Money.exchange!(PTAX.Money.new("119.50", :JPY), PTAX.Money.Pair.new(Decimal.new("119.50"), :USD, :JPY))
+      iex> PTAX.Money.exchange!(PTAX.Money.new("119.50", :JPY), PTAX.Money.Pair.new("119.50", :USD, :JPY))
       %PTAX.Money{amount: Decimal.new(1), currency: :USD}
 
-      iex> PTAX.Money.exchange!(PTAX.Money.new(1, :USD), PTAX.Money.Pair.new(Decimal.new("119.50"), :USD, :JPY))
+      iex> PTAX.Money.exchange!(PTAX.Money.new(1, :USD), PTAX.Money.Pair.new("119.50", :USD, :JPY))
       %PTAX.Money{amount: Decimal.new("119.50"), currency: :JPY}
   """
-  @spec exchange!(money, [to: currency, rate: money] | pair) :: money
-        when money: t, pair: Pair.t()
-  def exchange!(%{currency: currency}, to: currency, rate: _rate) do
-    raise Error.new(message: "Cannot exchange to the same currency!")
-  end
-
-  def exchange!(%{currency: currency} = money, to: to, rate: %{currency: currency} = rate) do
-    money.amount
-    |> Decimal.div(rate.amount)
-    |> new(to)
-  end
-
-  def exchange!(money, to: to, rate: %{currency: to} = rate) do
-    money.amount
-    |> Decimal.mult(rate.amount)
-    |> new(to)
-  end
+  @spec exchange!(money, pair :: Pair.t()) :: money when money: t
 
   def exchange!(money, %{base_currency: currency, quoted_currency: currency}) do
     money
   end
 
   def exchange!(%{currency: currency} = money, %{quoted_currency: currency} = pair) do
-    exchange!(money, to: pair.base_currency, rate: new(pair.amount, pair.quoted_currency))
+    money.amount
+    |> Decimal.div(pair.amount)
+    |> new(pair.base_currency)
   end
 
   def exchange!(%{currency: currency} = money, %{base_currency: currency} = pair) do
-    exchange!(money, to: pair.quoted_currency, rate: new(pair.amount, pair.quoted_currency))
+    money.amount
+    |> Decimal.mult(pair.amount)
+    |> new(pair.quoted_currency)
   end
 
+  @spec normalize(money) :: money when money: t
   def normalize(%{currency: currency, amount: amount}) do
     amount
     |> Decimal.round(4)

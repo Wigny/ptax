@@ -51,13 +51,15 @@ defmodule PTAX do
 
   def exchange(%{currency: :BRL} = money, %{to: currency, date: date}) do
     with {:ok, %{ask: rate}} <- Quotation.get(currency, date) do
-      {:ok, money |> Money.exchange!(to: currency, rate: rate) |> Money.normalize()}
+      pair = Money.Pair.new(rate.amount, :BRL, currency)
+      {:ok, money |> Money.exchange!(pair) |> Money.normalize()}
     end
   end
 
   def exchange(%{currency: currency} = money, %{to: :BRL, date: date}) do
     with {:ok, %{bid: rate}} <- Quotation.get(currency, date) do
-      {:ok, money |> Money.exchange!(to: :BRL, rate: rate) |> Money.normalize()}
+      pair = Money.Pair.new(rate.amount, currency, :BRL)
+      {:ok, money |> Money.exchange!(pair) |> Money.normalize()}
     end
   end
 
