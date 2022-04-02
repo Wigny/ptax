@@ -49,49 +49,14 @@ defmodule PTAX do
     exchange(money, Map.new(opts))
   end
 
-  def exchange(%{currency: :BRL} = money, %{to: currency, date: date}) do
-    with {:ok, %{ask: rate}} <- Quotation.get(currency, date) do
-      pair = Money.Pair.new(rate.amount, :BRL, currency)
-      {:ok, money |> Money.exchange!(pair) |> Money.normalize()}
-    end
-  end
-
-  def exchange(%{currency: currency} = money, %{to: :BRL, date: date}) do
-    with {:ok, %{bid: rate}} <- Quotation.get(currency, date) do
-      pair = Money.Pair.new(rate.amount, currency, :BRL)
-      {:ok, money |> Money.exchange!(pair) |> Money.normalize()}
-    end
-  end
-
-  def exchange(%{currency: :USD} = money, %{to: currency, date: date}) do
-    with {:ok, %{pairs: pairs}} <- Quotation.get(currency, date) do
-      pair = if pairs.type == :A, do: pairs.bid, else: pairs.ask
-      {:ok, money |> Money.exchange!(pair) |> Money.normalize()}
-    end
-  end
-
-  def exchange(%{currency: currency} = money, %{to: :USD, date: date}) do
-    with {:ok, %{pairs: pairs}} <- Quotation.get(currency, date) do
-      pair = if pairs.type == :A, do: pairs.ask, else: pairs.bid
-      {:ok, money |> Money.exchange!(pair) |> Money.normalize()}
-    end
-  end
-
   def exchange(money, %{to: to, date: date}) do
-    with {:ok, %{pairs: base_pairs}} <- Quotation.get(money.currency, date),
-         {:ok, %{pairs: quoted_pairs}} <- Quotation.get(to, date) do
-      quoted_pair =
-        if base_pairs.type == quoted_pairs.type,
-          do: quoted_pairs.ask,
-          else: quoted_pairs.bid
-
-      value =
-        money
-        |> Money.exchange!(base_pairs.bid)
-        |> Money.exchange!(quoted_pair)
-        |> Money.normalize()
-
-      {:ok, value}
+    with {:ok, %{pair: base_pair}} <- Quotation.get(money.currency, date),
+         {:ok, %{pair: quoted_pair}} <- Quotation.get(to, date) do
+      money
+      |> Money.exchange(base_pair)
+      |> Money.exchange(quoted_pair)
+      |> Money.normalize()
+      |> then(&{:ok, &1})
     end
   end
 

@@ -18,10 +18,7 @@ defmodule PTAX.Quotation do
   end
 
   typedstruct enforce: true do
-    field :currency, currency
-    field :bid, Money.t()
-    field :ask, Money.t()
-    field :pairs, %{bid: Money.Pair.t(), ask: Money.Pair.t(), type: atom}
+    field :pair, Money.Pair.t()
     field :quoted_in, DateTime.t()
     field :bulletin, bulletin
   end
@@ -29,20 +26,12 @@ defmodule PTAX.Quotation do
   @doc """
   Returns the quotation of a currency for the date
 
-  ## Examples
 
       iex> PTAX.Quotation.get(:USD, ~D[2021-12-24])
       {
         :ok,
         %PTAX.Quotation{
-          currency: :USD,
-          bid: PTAX.Money.new(5.6541, :BRL),
-          ask: PTAX.Money.new(5.6591, :BRL),
-          pairs: %{
-            type: :A,
-            bid: PTAX.Money.Pair.new(1.0, :USD, :USD),
-            ask: PTAX.Money.Pair.new(1.0, :USD, :USD)
-          },
+          pair: PTAX.Money.Pair.new("1.0", "1.0", :USD, :USD),
           quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.178], "America/Sao_Paulo"),
           bulletin: PTAX.Quotation.Bulletin.Closing
         }
@@ -80,59 +69,19 @@ defmodule PTAX.Quotation do
         :ok,
         [
           %PTAX.Quotation{
-            currency: :GBP,
-            bid: PTAX.Money.new(7.5605, :BRL),
-            ask: PTAX.Money.new(7.5669, :BRL),
-            pairs: %{
-              type: :B,
-              bid: PTAX.Money.Pair.new(1.3417, :GBP, :USD),
-              ask: PTAX.Money.Pair.new(1.3421, :GBP, :USD)
-            },
+            pair: PTAX.Money.Pair.new("1.3417", "1.3421", :GBP, :USD),
             quoted_in: DateTime.from_naive!(~N[2021-12-24 10:08:31.922], "America/Sao_Paulo"),
             bulletin: PTAX.Quotation.Bulletin.Opening
           },
           %PTAX.Quotation{
-            currency: :GBP,
-            bid: PTAX.Money.new(7.6032, :BRL),
-            ask: PTAX.Money.new(7.6147, :BRL),
-            pairs: %{
-              type: :B,
-              bid: PTAX.Money.Pair.new(1.3402, :GBP, :USD),
-              ask: PTAX.Money.Pair.new(1.3406, :GBP, :USD)
-            },
+            pair: PTAX.Money.Pair.new("1.3402", "1.3406", :GBP, :USD),
             quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.173], "America/Sao_Paulo"),
             bulletin: PTAX.Quotation.Bulletin.Intermediary
           },
           %PTAX.Quotation{
-            currency: :GBP,
-            bid: PTAX.Money.new(7.5776, :BRL),
-            ask: PTAX.Money.new(7.5866, :BRL),
-            pairs: %{
-              type: :B,
-              bid: PTAX.Money.Pair.new(1.3402, :GBP, :USD),
-              ask: PTAX.Money.Pair.new(1.3406, :GBP, :USD)
-            },
+            pair: PTAX.Money.Pair.new("1.3402", "1.3406", :GBP, :USD),
             quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.178], "America/Sao_Paulo"),
             bulletin: PTAX.Quotation.Bulletin.Closing
-          }
-        ]
-      }
-
-      iex> PTAX.Quotation.list(:GBP, Date.range(~D[2021-12-24], ~D[2021-12-24]), PTAX.Quotation.Bulletin.Opening)
-      {
-        :ok,
-        [
-          %PTAX.Quotation{
-            currency: :GBP,
-            bid: PTAX.Money.new(7.5605, :BRL),
-            ask: PTAX.Money.new(7.5669, :BRL),
-            pairs: %{
-              type: :B,
-              bid: PTAX.Money.Pair.new(1.3417, :GBP, :USD),
-              ask: PTAX.Money.Pair.new(1.3421, :GBP, :USD)
-            },
-            quoted_in: DateTime.from_naive!(~N[2021-12-24 10:08:31.922], "America/Sao_Paulo"),
-            bulletin: PTAX.Quotation.Bulletin.Opening
           }
         ]
       }
@@ -144,7 +93,7 @@ defmodule PTAX.Quotation do
         ) :: {:ok, list(t)} | {:error, Error.t()}
   def list(currency, period, bulletin \\ nil) do
     params = [
-      {"moeda", currency},
+      {"moeda", if(currency == :BRL, do: :USD, else: currency)},
       {"dataInicial", Timex.format!(period.first, "%m-%d-%Y", :strftime)},
       {"dataFinalCotacao", Timex.format!(period.last, "%m-%d-%Y", :strftime)}
     ]
@@ -152,39 +101,50 @@ defmodule PTAX.Quotation do
     quotation_request = Requests.get("/CotacaoMoedaPeriodo", opts: [odata_params: params])
 
     with {:ok, quotation} <- Requests.response(quotation_request) do
-      {:ok, [currency]} =
-        "/Moedas?$filter=simbolo%20eq%20':currency'"
-        |> Requests.get(opts: [path_params: [currency: currency]])
-        |> Requests.response()
-
       result =
         quotation
-        |> Enum.map(&(&1 |> Map.merge(currency) |> parse()))
+        |> Enum.map(&(&1 |> prepare(currency) |> parse()))
         |> filter(bulletin)
 
       {:ok, result}
     end
   end
 
+  defp prepare(quotation, :BRL) do
+    Map.merge(quotation, %{
+      "simbolo" => "BRL",
+      "tipo_moeda" => "A",
+      "paridade_compra" => quotation["cotacao_compra"],
+      "paridade_venda" => quotation["cotacao_venda"]
+    })
+  end
+
+  defp prepare(quotation, currency_symbol) do
+    "/Moedas?$filter=simbolo%20eq%20':currency'"
+    |> Requests.get(opts: [path_params: [currency: currency_symbol]])
+    |> Requests.response()
+    |> elem(1)
+    |> hd()
+    |> Map.merge(quotation)
+  end
+
   defp parse(value) do
     currency_symbol = String.to_existing_atom(value["simbolo"])
-    currency_type = String.to_existing_atom(value["tipo_moeda"])
 
     {base_currency, quoted_currency} =
-      case currency_type do
-        :A -> {:USD, currency_symbol}
-        :B -> {currency_symbol, :USD}
+      case value["tipo_moeda"] do
+        "A" -> {:USD, currency_symbol}
+        "B" -> {currency_symbol, :USD}
       end
 
     params = %{
-      currency: currency_symbol,
-      bid: Money.new(value["cotacao_compra"]),
-      ask: Money.new(value["cotacao_venda"]),
-      pairs: %{
-        type: currency_type,
-        bid: Money.Pair.new(value["paridade_compra"], base_currency, quoted_currency),
-        ask: Money.Pair.new(value["paridade_venda"], base_currency, quoted_currency)
-      },
+      pair:
+        Money.Pair.new(
+          value["paridade_compra"],
+          value["paridade_venda"],
+          base_currency,
+          quoted_currency
+        ),
       quoted_in:
         value
         |> Map.get("data_hora_cotacao")
