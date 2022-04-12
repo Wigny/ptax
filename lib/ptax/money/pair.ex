@@ -28,8 +28,8 @@ defmodule PTAX.Money.Pair do
   def new(bid, ask, base_currency, quoted_currency) do
     struct!(__MODULE__, %{
       amount: %{
-        bid: bid |> Money.to_amount() |> normalize(),
-        ask: ask |> Money.to_amount() |> normalize()
+        bid: Money.to_amount(bid, 7),
+        ask: Money.to_amount(ask, 7)
       },
       base_currency: base_currency,
       quoted_currency: quoted_currency
@@ -86,12 +86,6 @@ defmodule PTAX.Money.Pair do
     ask = 1 |> Decimal.div(pair1.amount.bid) |> Decimal.div(pair2.amount.bid)
 
     new(bid, ask, pair1.base_currency, pair2.quoted_currency)
-  end
-
-  defp normalize(decimal) do
-    decimal
-    |> Decimal.round(7)
-    |> Decimal.normalize()
   end
 
   defimpl Inspect do
