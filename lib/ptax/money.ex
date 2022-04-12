@@ -3,7 +3,6 @@ defmodule PTAX.Money do
 
   use TypedStruct
   import Decimal, only: [is_decimal: 1]
-  alias PTAX.Money.Pair
 
   @type currency :: atom()
   @type amount :: Decimal.t()
@@ -69,10 +68,10 @@ defmodule PTAX.Money do
     |> new(pair.quoted_currency)
   end
 
-  @spec normalize(money) :: money when money: t
-  def normalize(money) do
+  @spec normalize(money, places :: integer) :: money when money: t
+  def normalize(money, places \\ 4) do
     money.amount
-    |> Decimal.round(4)
+    |> Decimal.round(places)
     |> Decimal.normalize()
     |> new(money.currency)
   end

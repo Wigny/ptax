@@ -15,8 +15,8 @@ defmodule PTAX.Money.Pair do
 
   ## Examples:
 
-      iex> PTAX.Money.Pair.new(2, :GBP, :USD)
-      %PTAX.Money.Pair{amount: Decimal.new(2), base_currency: :GBP, quoted_currency: :USD}
+      iex> PTAX.Money.Pair.new(2, 2.1, :GBP, :USD)
+      %PTAX.Money.Pair{amount: %{bid: Decimal.new(2), ask: Decimal.new("2.1")}, base_currency: :GBP, quoted_currency: :USD}
   """
   @spec new(
           bid :: value,
@@ -28,12 +28,70 @@ defmodule PTAX.Money.Pair do
   def new(bid, ask, base_currency, quoted_currency) do
     struct!(__MODULE__, %{
       amount: %{
-        bid: Money.to_amount(bid),
-        ask: Money.to_amount(ask)
+        bid: bid |> Money.to_amount() |> normalize(),
+        ask: ask |> Money.to_amount() |> normalize()
       },
       base_currency: base_currency,
       quoted_currency: quoted_currency
     })
+  end
+
+  @doc """
+  TODO
+
+  ## Examples:
+
+      iex> PTAX.Money.Pair.equate(PTAX.Money.Pair.new(6.5673, 6.5691, :USD, :DKK), PTAX.Money.Pair.new(8.8365, 8.8395, :USD, :NOK))
+      PTAX.Money.Pair.new(1.3459869, 0.7429493, :DKK, :NOK)
+      iex> PTAX.Money.Pair.equate(PTAX.Money.Pair.new(8.8365, 8.8395, :USD, :NOK), PTAX.Money.Pair.new(6.5673, 6.5691, :USD, :DKK))
+      PTAX.Money.Pair.new(0.7434052, 1.3451614, :NOK, :DKK)
+
+      iex> PTAX.Money.Pair.equate(PTAX.Money.Pair.new(1.2813, 1.2815, :USD, :CAD), PTAX.Money.Pair.new(0.7232, 0.7236, :AUD, :USD))
+      PTAX.Money.Pair.new(1.0791722, 0.9266362, :CAD, :AUD)
+      iex> PTAX.Money.Pair.equate(PTAX.Money.Pair.new(0.7232, 0.7236, :AUD, :USD), PTAX.Money.Pair.new(1.2813, 1.2815, :USD, :CAD))
+      PTAX.Money.Pair.new(0.9266362, 1.0791722, :AUD, :CAD)
+  """
+
+  def equate(%{base_currency: currency, quoted_currency: currency}, pair2) do
+    pair2
+  end
+
+  def equate(pair1, %{base_currency: currency, quoted_currency: currency}) do
+    pair1
+  end
+
+  def equate(%{base_currency: currency} = pair1, %{base_currency: currency} = pair2) do
+    bid = 1 |> Decimal.div(pair1.amount.bid) |> Decimal.mult(pair2.amount.ask)
+    ask = 1 |> Decimal.mult(pair1.amount.bid) |> Decimal.div(pair2.amount.ask)
+
+    new(bid, ask, pair1.quoted_currency, pair2.quoted_currency)
+  end
+
+  def equate(%{quoted_currency: currency} = pair1, %{quoted_currency: currency} = pair2) do
+    bid = 1 |> Decimal.mult(pair1.amount.bid) |> Decimal.div(pair2.amount.ask)
+    ask = 1 |> Decimal.div(pair1.amount.bid) |> Decimal.mult(pair2.amount.ask)
+
+    new(bid, ask, pair1.base_currency, pair2.base_currency)
+  end
+
+  def equate(%{base_currency: :USD} = pair1, pair2) do
+    bid = 1 |> Decimal.div(pair1.amount.bid) |> Decimal.div(pair2.amount.bid)
+    ask = 1 |> Decimal.mult(pair1.amount.bid) |> Decimal.mult(pair2.amount.bid)
+
+    new(bid, ask, pair1.quoted_currency, pair2.base_currency)
+  end
+
+  def equate(pair1, %{base_currency: :USD} = pair2) do
+    bid = 1 |> Decimal.mult(pair1.amount.bid) |> Decimal.mult(pair2.amount.bid)
+    ask = 1 |> Decimal.div(pair1.amount.bid) |> Decimal.div(pair2.amount.bid)
+
+    new(bid, ask, pair1.base_currency, pair2.quoted_currency)
+  end
+
+  defp normalize(decimal) do
+    decimal
+    |> Decimal.round(7)
+    |> Decimal.normalize()
   end
 
   defimpl Inspect do

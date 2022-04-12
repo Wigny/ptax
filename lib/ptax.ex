@@ -52,9 +52,10 @@ defmodule PTAX do
   def exchange(money, %{to: to, date: date}) do
     with {:ok, %{pair: base_pair}} <- Quotation.get(money.currency, date),
          {:ok, %{pair: quoted_pair}} <- Quotation.get(to, date) do
+      pair = Money.Pair.equate(base_pair, quoted_pair)
+
       money
-      |> Money.exchange(base_pair)
-      |> Money.exchange(quoted_pair)
+      |> Money.exchange(pair)
       |> Money.normalize()
       |> then(&{:ok, &1})
     end
@@ -65,8 +66,8 @@ defmodule PTAX do
 
   ## Examples
 
-      iex> PTAX.exchange!(PTAX.Money.new(15, :USD), to: :BRL, date: ~D[2021-12-24])
-      PTAX.Money.new("84.8115", :BRL)
+      iex> PTAX.exchange!(PTAX.Money.new(10, :USD), to: :BRL, date: ~D[2021-12-24])
+      PTAX.Money.new("56.541", :BRL)
 
       iex> PTAX.exchange!(PTAX.Money.new("15.45", :USD), to: :GBP, date: ~D[2021-12-24])
       PTAX.Money.new("11.5247", :GBP)
