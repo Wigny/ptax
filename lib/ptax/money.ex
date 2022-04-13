@@ -2,10 +2,11 @@ defmodule PTAX.Money do
   @moduledoc "Defines a `Money` structure for working with currencies."
 
   use TypedStruct
-  import Decimal, only: [is_decimal: 1]
 
   @type currency :: atom()
   @type amount :: Decimal.t()
+  @type pair :: PTAX.Money.Pair.t()
+  @typep value :: Decimal.decimal() | float
 
   typedstruct enforce: true do
     field :amount, amount
@@ -18,15 +19,15 @@ defmodule PTAX.Money do
   ## Examples:
 
       iex> PTAX.Money.new(10)
-      PTAX.Money.new(10, :BRL)
+      %PTAX.Money{amount: PTAX.Money.to_amount(10), currency: :BRL}
 
       iex> PTAX.Money.new("12.75", :USD)
-      PTAX.Money.new("12.75", :USD)
+      %PTAX.Money{amount: PTAX.Money.to_amount("12.75"), currency: :USD}
 
       iex> PTAX.Money.new(123, :GBP)
-      PTAX.Money.new(123, :GBP)
+      %PTAX.Money{amount: PTAX.Money.to_amount(123), currency: :GBP}
   """
-  @spec new(amount :: any, currency) :: t
+  @spec new(amount :: value, currency) :: t
   def new(amount, currency \\ :BRL)
 
   def new(amount, currency) do
@@ -50,7 +51,7 @@ defmodule PTAX.Money do
       iex> PTAX.Money.exchange(PTAX.Money.new(1, :USD), PTAX.Money.Pair.new("114.5", 115, :USD, :JPY))
       PTAX.Money.new("114.5", :JPY)
   """
-  @spec exchange(money, pair :: Pair.t()) :: money when money: t
+  @spec exchange(money, pair) :: money when money: t
 
   def exchange(money, %{base_currency: currency, quoted_currency: currency}) do
     money
@@ -68,7 +69,7 @@ defmodule PTAX.Money do
     |> new(pair.quoted_currency)
   end
 
-  @spec to_amount(value :: Decimal.decimal() | float, places :: integer | nil) :: amount
+  @spec to_amount(value :: value, places :: integer | nil) :: amount
   def to_amount(value, places \\ 4)
 
   def to_amount(value, places) when is_float(value) do

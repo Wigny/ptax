@@ -5,10 +5,10 @@ defmodule PTAX do
 
   alias PTAX.{Error, Money, Quotation, Requests}
 
-  @typep money :: Money.t()
-  @typep currency :: Money.currency()
-  @typep exchange_opts :: [to: currency, date: Date.t()] | %{to: currency, date: Date.t()}
-  @typep error :: Error.t()
+  @type money :: Money.t()
+  @type currency :: Money.currency()
+  @type exchange_opts :: [to: currency, date: Date.t()] | %{to: currency, date: Date.t()}
+  @type error :: Error.t()
 
   @doc """
   Returns a list of supported currencies
@@ -43,7 +43,6 @@ defmodule PTAX do
       iex> PTAX.exchange(PTAX.Money.new("15.69", :EUR), to: :GBP, date: ~D[2021-12-24])
       {:ok, PTAX.Money.new("13.2474", :GBP)}
   """
-
   @spec exchange(money, opts :: exchange_opts) :: {:ok, money} | {:error, error}
   def exchange(money, opts) when is_list(opts) do
     exchange(money, Map.new(opts))

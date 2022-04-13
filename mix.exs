@@ -13,7 +13,8 @@ defmodule PTAX.MixProject do
       package: package(),
       docs: docs(),
       deps: deps(),
-      dialyzer: dialyzer()
+      dialyzer: dialyzer(),
+      preferred_cli_env: ["test.watch": :test]
     ]
   end
 
@@ -37,7 +38,8 @@ defmodule PTAX.MixProject do
       {:timex, "~> 3.7"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.1", only: [:dev], runtime: false}
+      {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
+      {:mix_test_watch, "~> 1.1", only: [:dev, :test], runtime: false}
     ]
   end
 
