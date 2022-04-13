@@ -5,7 +5,7 @@ defmodule PTAX.RequestsFixtures do
 
   @base_url "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata"
 
-  def fixture() do
+  def fixture do
     mock(&env/1)
   end
 

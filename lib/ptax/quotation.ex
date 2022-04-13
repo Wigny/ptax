@@ -9,7 +9,7 @@ defmodule PTAX.Quotation do
   @typep currency :: Money.currency()
   @typep date :: Date.t()
   @typep period :: Date.Range.t()
-  @typep bulletin :: Bulletin.t()
+  @typep bulletin :: __MODULE__.Bulletin.t()
 
   defenum Bulletin do
     value Opening, "Abertura"
