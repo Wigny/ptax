@@ -26,6 +26,7 @@ defmodule PTAX.Quotation do
   @doc """
   Returns the quotation of a currency for the date
 
+  ## Examples
 
       iex> PTAX.Quotation.get(:USD, ~D[2021-12-24])
       {
