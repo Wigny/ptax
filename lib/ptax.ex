@@ -51,7 +51,7 @@ defmodule PTAX do
   def exchange(money, %{to: to, date: date}) do
     with {:ok, %{pair: base_pair}} <- Quotation.get(money.currency, date),
          {:ok, %{pair: quoted_pair}} <- Quotation.get(to, date) do
-      pair = Money.Pair.equate(base_pair, quoted_pair)
+      pair = Money.Pair.combine(base_pair, quoted_pair)
       value = Money.exchange(money, pair)
 
       {:ok, value}

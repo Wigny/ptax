@@ -40,58 +40,58 @@ defmodule PTAX.Money.Pair do
   end
 
   @doc """
-  Equates two currency pairs, based on their common currency
+  Combines two currency pairs, based on their common currency
 
   ## Examples:
 
-      # Type A - Type A
-      iex> PTAX.Money.Pair.equate(PTAX.Money.Pair.new(6.5673, 6.5691, :USD, :DKK), PTAX.Money.Pair.new(8.8365, 8.8395, :USD, :NOK))
+      # Type A / Type A
+      iex> PTAX.Money.Pair.combine(PTAX.Money.Pair.new(6.5673, 6.5691, :USD, :DKK), PTAX.Money.Pair.new(8.8365, 8.8395, :USD, :NOK))
       PTAX.Money.Pair.new(1.3459869, 1.3451614, :DKK, :NOK)
 
-      # Type A - Type B
-      iex> PTAX.Money.Pair.equate(PTAX.Money.Pair.new(1.2813, 1.2815, :USD, :CAD), PTAX.Money.Pair.new(0.7232, 0.7236, :AUD, :USD))
+      # Type A / Type B
+      iex> PTAX.Money.Pair.combine(PTAX.Money.Pair.new(1.2813, 1.2815, :USD, :CAD), PTAX.Money.Pair.new(0.7232, 0.7236, :AUD, :USD))
       PTAX.Money.Pair.new(1.0791722, 1.0791722, :CAD, :AUD)
 
-      # Type B - Type A
-      iex> PTAX.Money.Pair.equate(PTAX.Money.Pair.new(1.3402, 1.3406, :GBP, :USD), PTAX.Money.Pair.new(0.9185, 0.9192, :USD, :CHF))
+      # Type B / Type A
+      iex> PTAX.Money.Pair.combine(PTAX.Money.Pair.new(1.3402, 1.3406, :GBP, :USD), PTAX.Money.Pair.new(0.9185, 0.9192, :USD, :CHF))
       PTAX.Money.Pair.new(1.2309737, 1.2309737, :GBP, :CHF)
 
-      # Type B - Type B
-      iex> PTAX.Money.Pair.equate(PTAX.Money.Pair.new(1.3402, 1.3406, :GBP, :USD), PTAX.Money.Pair.new(1.1319, 1.1323, :EUR, :USD))
+      # Type B / Type B
+      iex> PTAX.Money.Pair.combine(PTAX.Money.Pair.new(1.3402, 1.3406, :GBP, :USD), PTAX.Money.Pair.new(1.1319, 1.1323, :EUR, :USD))
       PTAX.Money.Pair.new(1.1836086, 1.1843802, :GBP, :EUR)
   """
 
-  @spec equate(pair, pair) :: pair when pair: t
+  @spec combine(pair, pair) :: pair when pair: t
 
-  def equate(%{base_currency: currency, quoted_currency: currency}, pair2) do
+  def combine(%{base_currency: currency, quoted_currency: currency}, pair2) do
     pair2
   end
 
-  def equate(pair1, %{base_currency: currency, quoted_currency: currency}) do
+  def combine(pair1, %{base_currency: currency, quoted_currency: currency}) do
     pair1
   end
 
-  def equate(pair1, pair2) when is_type_a(pair1) and is_type_a(pair2) do
+  def combine(pair1, pair2) when is_type_a(pair1) and is_type_a(pair2) do
     bid = 1 |> Decimal.div(pair1.amount.bid) |> Decimal.mult(pair2.amount.ask)
     ask = 1 |> Decimal.div(pair1.amount.ask) |> Decimal.mult(pair2.amount.bid)
 
     new(bid, ask, pair1.quoted_currency, pair2.quoted_currency)
   end
 
-  def equate(pair1, pair2) when is_type_b(pair1) and is_type_b(pair2) do
+  def combine(pair1, pair2) when is_type_b(pair1) and is_type_b(pair2) do
     bid = 1 |> Decimal.mult(pair1.amount.bid) |> Decimal.div(pair2.amount.ask)
     ask = 1 |> Decimal.mult(pair1.amount.ask) |> Decimal.div(pair2.amount.bid)
 
     new(bid, ask, pair1.base_currency, pair2.base_currency)
   end
 
-  def equate(pair1, pair2) when is_type_a(pair1) and is_type_b(pair2) do
+  def combine(pair1, pair2) when is_type_a(pair1) and is_type_b(pair2) do
     amount = 1 |> Decimal.div(pair1.amount.bid) |> Decimal.div(pair2.amount.bid)
 
     new(amount, amount, pair1.quoted_currency, pair2.base_currency)
   end
 
-  def equate(pair1, pair2) when is_type_b(pair1) and is_type_a(pair2) do
+  def combine(pair1, pair2) when is_type_b(pair1) and is_type_a(pair2) do
     amount = 1 |> Decimal.mult(pair1.amount.bid) |> Decimal.mult(pair2.amount.bid)
 
     new(amount, amount, pair1.base_currency, pair2.quoted_currency)
