@@ -78,13 +78,6 @@ defmodule PTAX.Money.Pair do
     new(bid, ask, pair1.quoted_currency, pair2.quoted_currency)
   end
 
-  def combine(pair1, pair2) when is_type_b(pair1) and is_type_b(pair2) do
-    bid = 1 |> Decimal.mult(pair1.amount.bid) |> Decimal.div(pair2.amount.ask)
-    ask = 1 |> Decimal.mult(pair1.amount.ask) |> Decimal.div(pair2.amount.bid)
-
-    new(bid, ask, pair1.base_currency, pair2.base_currency)
-  end
-
   def combine(pair1, pair2) when is_type_a(pair1) and is_type_b(pair2) do
     amount = 1 |> Decimal.div(pair1.amount.bid) |> Decimal.div(pair2.amount.bid)
 
@@ -95,6 +88,13 @@ defmodule PTAX.Money.Pair do
     amount = 1 |> Decimal.mult(pair1.amount.bid) |> Decimal.mult(pair2.amount.bid)
 
     new(amount, amount, pair1.base_currency, pair2.quoted_currency)
+  end
+
+  def combine(pair1, pair2) when is_type_b(pair1) and is_type_b(pair2) do
+    bid = 1 |> Decimal.mult(pair1.amount.bid) |> Decimal.div(pair2.amount.ask)
+    ask = 1 |> Decimal.mult(pair1.amount.ask) |> Decimal.div(pair2.amount.bid)
+
+    new(bid, ask, pair1.base_currency, pair2.base_currency)
   end
 
   defimpl Inspect do

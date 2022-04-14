@@ -1,5 +1,7 @@
 # PTAX
 
+> This package is for learning purposes and its use in production is not yet recommended.
+
 A currency converter that uses the API provided by the Brazilian Open Data Portal to perform quotes
 
 ## Installation
