@@ -5,10 +5,10 @@ defmodule PTAX do
 
   alias PTAX.{Error, Money, Quotation, Requests}
 
-  @typep money :: Money.t()
-  @typep currency :: Money.currency()
-  @typep exchange_opts :: [to: currency, date: Date.t()] | %{to: currency, date: Date.t()}
-  @typep error :: Error.t()
+  @type money :: Money.t()
+  @type currency :: Money.currency()
+  @type exchange_opts :: [to: currency, date: Date.t()] | %{to: currency, date: Date.t()}
+  @type error :: Error.t()
 
   @doc """
   Returns a list of supported currencies
@@ -43,51 +43,16 @@ defmodule PTAX do
       iex> PTAX.exchange(PTAX.Money.new("15.69", :EUR), to: :GBP, date: ~D[2021-12-24])
       {:ok, PTAX.Money.new("13.2474", :GBP)}
   """
-
   @spec exchange(money, opts :: exchange_opts) :: {:ok, money} | {:error, error}
   def exchange(money, opts) when is_list(opts) do
     exchange(money, Map.new(opts))
   end
 
-  def exchange(%{currency: :BRL} = money, %{to: currency, date: date}) do
-    with {:ok, %{ask: rate}} <- Quotation.get(currency, date) do
-      {:ok, money |> Money.exchange!(to: currency, rate: rate) |> Money.normalize()}
-    end
-  end
-
-  def exchange(%{currency: currency} = money, %{to: :BRL, date: date}) do
-    with {:ok, %{bid: rate}} <- Quotation.get(currency, date) do
-      {:ok, money |> Money.exchange!(to: :BRL, rate: rate) |> Money.normalize()}
-    end
-  end
-
-  def exchange(%{currency: :USD} = money, %{to: currency, date: date}) do
-    with {:ok, %{pairs: pairs}} <- Quotation.get(currency, date) do
-      pair = if pairs.type == :A, do: pairs.bid, else: pairs.ask
-      {:ok, money |> Money.exchange!(pair) |> Money.normalize()}
-    end
-  end
-
-  def exchange(%{currency: currency} = money, %{to: :USD, date: date}) do
-    with {:ok, %{pairs: pairs}} <- Quotation.get(currency, date) do
-      pair = if pairs.type == :A, do: pairs.ask, else: pairs.bid
-      {:ok, money |> Money.exchange!(pair) |> Money.normalize()}
-    end
-  end
-
   def exchange(money, %{to: to, date: date}) do
-    with {:ok, %{pairs: base_pairs}} <- Quotation.get(money.currency, date),
-         {:ok, %{pairs: quoted_pairs}} <- Quotation.get(to, date) do
-      quoted_pair =
-        if base_pairs.type == quoted_pairs.type,
-          do: quoted_pairs.ask,
-          else: quoted_pairs.bid
-
-      value =
-        money
-        |> Money.exchange!(base_pairs.bid)
-        |> Money.exchange!(quoted_pair)
-        |> Money.normalize()
+    with {:ok, %{pair: base_pair}} <- Quotation.get(money.currency, date),
+         {:ok, %{pair: quoted_pair}} <- Quotation.get(to, date) do
+      pair = Money.Pair.combine(base_pair, quoted_pair)
+      value = Money.exchange(money, pair)
 
       {:ok, value}
     end
@@ -98,8 +63,8 @@ defmodule PTAX do
 
   ## Examples
 
-      iex> PTAX.exchange!(PTAX.Money.new(15, :USD), to: :BRL, date: ~D[2021-12-24])
-      PTAX.Money.new("84.8115", :BRL)
+      iex> PTAX.exchange!(PTAX.Money.new(10, :USD), to: :BRL, date: ~D[2021-12-24])
+      PTAX.Money.new("56.541", :BRL)
 
       iex> PTAX.exchange!(PTAX.Money.new("15.45", :USD), to: :GBP, date: ~D[2021-12-24])
       PTAX.Money.new("11.5247", :GBP)

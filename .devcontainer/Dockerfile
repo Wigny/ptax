@@ -11,7 +11,7 @@ ARG USER_GID=$USER_UID
 # Options for common package install script
 ARG INSTALL_ZSH="true"
 ARG UPGRADE_PACKAGES="true"
-ARG COMMON_SCRIPT_SOURCE="https://raw.githubusercontent.com/microsoft/vscode-dev-containers/v0.224.3/script-library/common-debian.sh"
+ARG COMMON_SCRIPT_SOURCE="https://raw.githubusercontent.com/microsoft/vscode-dev-containers/v0.231.6/script-library/common-debian.sh"
 ARG COMMON_SCRIPT_SHA="3c3543c8aa1f3adba62ae1a9e204846f8448c4cbfee1bce1edaf2a9fefac85df"
 
 # Install needed packages and setup non-root user. Use a separate RUN statement to add your own dependencies.
@@ -34,9 +34,9 @@ RUN su ${USERNAME} -c "mix local.hex --force \
   && mix local.rebar --force"
 
 # [Optional] Uncomment this section to install additional OS packages.
-# RUN apt-get update \
-#     && export DEBIAN_FRONTEND=noninteractive \
-#     && apt-get -y install --no-install-recommends <your-package-list-here>
+RUN apt-get update \
+  && export DEBIAN_FRONTEND=noninteractive \
+  && apt-get -y install --no-install-recommends inotify-tools
 
 # [Optional] Uncomment this line to install additional package.
 # RUN  mix ...

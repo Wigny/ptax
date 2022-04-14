@@ -2,14 +2,14 @@ defmodule PTAX.Money do
   @moduledoc "Defines a `Money` structure for working with currencies."
 
   use TypedStruct
-  import Decimal, only: [is_decimal: 1]
-  alias PTAX.Error
-  alias PTAX.Money.Pair
 
   @type currency :: atom()
+  @type amount :: Decimal.t()
+  @type pair :: PTAX.Money.Pair.t()
+  @typep value :: Decimal.decimal() | float
 
   typedstruct enforce: true do
-    field :amount, Decimal.t()
+    field :amount, amount
     field :currency, currency
   end
 
@@ -19,27 +19,19 @@ defmodule PTAX.Money do
   ## Examples:
 
       iex> PTAX.Money.new(10)
-      %PTAX.Money{amount: Decimal.new(10), currency: :BRL}
+      %PTAX.Money{amount: PTAX.Money.to_amount(10), currency: :BRL}
 
       iex> PTAX.Money.new("12.75", :USD)
-      %PTAX.Money{amount: Decimal.new("12.75"), currency: :USD}
+      %PTAX.Money{amount: PTAX.Money.to_amount("12.75"), currency: :USD}
 
       iex> PTAX.Money.new(123, :GBP)
-      %PTAX.Money{amount: Decimal.new(123), currency: :GBP}
+      %PTAX.Money{amount: PTAX.Money.to_amount(123), currency: :GBP}
   """
-  @spec new(amount :: any, currency) :: t
+  @spec new(amount :: value, currency) :: t
   def new(amount, currency \\ :BRL)
 
-  def new(amount, currency) when is_decimal(amount) do
-    struct!(__MODULE__, %{amount: amount, currency: currency})
-  end
-
-  def new(amount, currency) when is_float(amount) do
-    amount |> Decimal.from_float() |> new(currency)
-  end
-
   def new(amount, currency) do
-    amount |> Decimal.new() |> new(currency)
+    struct!(__MODULE__, %{amount: to_amount(amount), currency: currency})
   end
 
   @doc """
@@ -47,62 +39,51 @@ defmodule PTAX.Money do
 
   ## Examples:
 
-      iex> PTAX.Money.exchange!(PTAX.Money.new("12.75", :USD), to: :BRL, rate: PTAX.Money.new(5, :BRL))
-      %PTAX.Money{amount: Decimal.new("63.75"), currency: :BRL}
+      iex> PTAX.Money.exchange(PTAX.Money.new(10, :USD), PTAX.Money.Pair.new(5, "5.5", :USD, :BRL))
+      PTAX.Money.new(50, :BRL)
 
-      iex> PTAX.Money.exchange!(PTAX.Money.new(10), to: :USD, rate: PTAX.Money.new(5, :BRL))
-      %PTAX.Money{amount: Decimal.new(2), currency: :USD}
+      iex> PTAX.Money.exchange(PTAX.Money.new(1, :USD), PTAX.Money.Pair.new("1.5", 2, :GBP, :USD))
+      PTAX.Money.new("0.5", :GBP)
 
-      iex> PTAX.Money.exchange!(PTAX.Money.new(10), to: :USD, rate: PTAX.Money.new("0.2", :USD))
-      %PTAX.Money{amount: Decimal.new("2.0"), currency: :USD}
+      iex> PTAX.Money.exchange(PTAX.Money.new(115, :JPY), PTAX.Money.Pair.new("114.5", 115, :USD, :JPY))
+      PTAX.Money.new(1, :USD)
 
-      iex> PTAX.Money.exchange!(PTAX.Money.new(123, :GBP), to: :GBP, rate: PTAX.Money.new("1", :GBP))
-      ** (PTAX.Error) Cannot exchange to the same currency!
-
-      iex> PTAX.Money.exchange!(PTAX.Money.new(1, :USD), to: :GBP, rate: PTAX.Money.new(2, :USD))
-      %PTAX.Money{amount: Decimal.new("0.5"), currency: :GBP}
-
-      iex> PTAX.Money.exchange!(PTAX.Money.new("119.50", :JPY), PTAX.Money.Pair.new(Decimal.new("119.50"), :USD, :JPY))
-      %PTAX.Money{amount: Decimal.new(1), currency: :USD}
-
-      iex> PTAX.Money.exchange!(PTAX.Money.new(1, :USD), PTAX.Money.Pair.new(Decimal.new("119.50"), :USD, :JPY))
-      %PTAX.Money{amount: Decimal.new("119.50"), currency: :JPY}
+      iex> PTAX.Money.exchange(PTAX.Money.new(1, :USD), PTAX.Money.Pair.new("114.5", 115, :USD, :JPY))
+      PTAX.Money.new("114.5", :JPY)
   """
-  @spec exchange!(money, [to: currency, rate: money] | pair) :: money
-        when money: t, pair: Pair.t()
-  def exchange!(%{currency: currency}, to: currency, rate: _rate) do
-    raise Error.new(message: "Cannot exchange to the same currency!")
-  end
+  @spec exchange(money, pair) :: money when money: t
 
-  def exchange!(%{currency: currency} = money, to: to, rate: %{currency: currency} = rate) do
-    money.amount
-    |> Decimal.div(rate.amount)
-    |> new(to)
-  end
-
-  def exchange!(money, to: to, rate: %{currency: to} = rate) do
-    money.amount
-    |> Decimal.mult(rate.amount)
-    |> new(to)
-  end
-
-  def exchange!(money, %{base_currency: currency, quoted_currency: currency}) do
+  def exchange(money, %{base_currency: currency, quoted_currency: currency}) do
     money
   end
 
-  def exchange!(%{currency: currency} = money, %{quoted_currency: currency} = pair) do
-    exchange!(money, to: pair.base_currency, rate: new(pair.amount, pair.quoted_currency))
+  def exchange(%{currency: currency} = money, %{quoted_currency: currency} = pair) do
+    money.amount
+    |> Decimal.div(pair.amount.ask)
+    |> new(pair.base_currency)
   end
 
-  def exchange!(%{currency: currency} = money, %{base_currency: currency} = pair) do
-    exchange!(money, to: pair.quoted_currency, rate: new(pair.amount, pair.quoted_currency))
+  def exchange(%{currency: currency} = money, %{base_currency: currency} = pair) do
+    money.amount
+    |> Decimal.mult(pair.amount.bid)
+    |> new(pair.quoted_currency)
   end
 
-  def normalize(%{currency: currency, amount: amount}) do
-    amount
-    |> Decimal.round(4)
+  @spec to_amount(value :: value, places :: integer | nil) :: amount
+  def to_amount(value, places \\ 4)
+
+  def to_amount(value, places) when is_float(value) do
+    value |> Decimal.from_float() |> normalize_amount(places)
+  end
+
+  def to_amount(value, places) do
+    normalize_amount(value, places)
+  end
+
+  defp normalize_amount(value, places) do
+    value
+    |> Decimal.round(places)
     |> Decimal.normalize()
-    |> new(currency)
   end
 
   defimpl Inspect do
