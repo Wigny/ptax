@@ -24,8 +24,9 @@ defmodule PTAX do
 
     with {:ok, response} <- Requests.response(result) do
       currencies = Enum.map(response, &String.to_atom(&1["simbolo"]))
+      currencies = [:BRL | currencies]
 
-      {:ok, currencies}
+      {:ok, Enum.sort(currencies)}
     end
   end
 
