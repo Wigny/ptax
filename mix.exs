@@ -4,7 +4,7 @@ defmodule PTAX.MixProject do
   def project do
     [
       app: :ptax,
-      version: "1.1.1",
+      version: "1.1.2",
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:gettext] ++ Mix.compilers(),
