@@ -23,18 +23,32 @@ defmodule PTAX.Requests do
     {:ok, value}
   end
 
-  def response({:ok, %{status: status}}) when is_success(status) do
-    error = Error.new(code: :not_found, message: "Data not found")
+  def response({:ok, %{body: body, status: status}}) when is_success(status) do
+    error =
+      Error.new(
+        code: :not_found,
+        message: "Data not found",
+        status: status,
+        details: inspect(body)
+      )
+
     {:error, error}
   end
 
-  def response({:ok, %{status: status}}) when is_error(status) do
-    error = Error.new(code: :server_error, message: "Unknown error")
+  def response({:ok, %{body: body, status: status}}) when is_error(status) do
+    error =
+      Error.new(
+        code: :server_error,
+        message: "Unknown error",
+        status: status,
+        details: inspect(body)
+      )
+
     {:error, error}
   end
 
-  def response({:error, _error}) do
-    error = Error.new(code: :network_error, message: "Request error")
+  def response({:error, error}) do
+    error = Error.new(code: :network_error, message: "Request error", details: inspect(error))
     {:error, error}
   end
 end
