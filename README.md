@@ -11,7 +11,7 @@ This package can be installed by adding `ptax` to your list of dependencies in `
 ```elixir
 def deps do
   [
-    {:ptax, "~> 0.1"}
+    {:ptax, "~> 1.0"}
   ]
 end
 ```
