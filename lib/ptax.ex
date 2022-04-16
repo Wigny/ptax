@@ -16,7 +16,7 @@ defmodule PTAX do
   ## Examples
 
       iex> PTAX.currencies()
-      {:ok, ~w[GBP EUR USD]a}
+      {:ok, ~w[BRL EUR GBP USD]a}
   """
   @spec currencies :: {:ok, list(currency)} | {:error, Error.t()}
   def currencies do

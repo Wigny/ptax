@@ -9,13 +9,7 @@ defmodule PTAX.Quotation do
   @typep currency :: Money.currency()
   @typep date :: Date.t()
   @typep period :: Date.Range.t()
-  @typep bulletin :: __MODULE__.Bulletin.t()
-
-  defenum Bulletin do
-    value Opening, "Abertura"
-    value Intermediary, "Intermediário"
-    value Closing, "Fechamento"
-  end
+  @typep bulletin :: :opening | :intermediary | :closing
 
   typedstruct enforce: true do
     field :pair, Money.Pair.t()
@@ -34,12 +28,12 @@ defmodule PTAX.Quotation do
         %PTAX.Quotation{
           pair: PTAX.Money.Pair.new("1.0", "1.0", :USD, :USD),
           quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.178], "America/Sao_Paulo"),
-          bulletin: PTAX.Quotation.Bulletin.Closing
+          bulletin: :closing
         }
       }
   """
   @spec get(currency, date, bulletin | nil) :: {:ok, t()} | {:error, Error.t()}
-  def get(currency, date, bulletin \\ Bulletin.Closing) do
+  def get(currency, date, bulletin \\ :closing) do
     period = Date.range(date, date)
 
     case list(currency, period, bulletin) do
@@ -72,17 +66,17 @@ defmodule PTAX.Quotation do
           %PTAX.Quotation{
             pair: PTAX.Money.Pair.new("1.3417", "1.3421", :GBP, :USD),
             quoted_in: DateTime.from_naive!(~N[2021-12-24 10:08:31.922], "America/Sao_Paulo"),
-            bulletin: PTAX.Quotation.Bulletin.Opening
+            bulletin: :opening
           },
           %PTAX.Quotation{
             pair: PTAX.Money.Pair.new("1.3402", "1.3406", :GBP, :USD),
             quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.173], "America/Sao_Paulo"),
-            bulletin: PTAX.Quotation.Bulletin.Intermediary
+            bulletin: :intermediary
           },
           %PTAX.Quotation{
             pair: PTAX.Money.Pair.new("1.3402", "1.3406", :GBP, :USD),
             quoted_in: DateTime.from_naive!(~N[2021-12-24 11:04:02.178], "America/Sao_Paulo"),
-            bulletin: PTAX.Quotation.Bulletin.Closing
+            bulletin: :closing
           }
         ]
       }
@@ -138,6 +132,13 @@ defmodule PTAX.Quotation do
         "B" -> {currency_symbol, :USD}
       end
 
+    bulletin =
+      case value["tipo_boletim"] do
+        "Abertura" -> :opening
+        "Intermediário" -> :intermediary
+        "Fechamento" -> :closing
+      end
+
     params = %{
       pair:
         Money.Pair.new(
@@ -151,7 +152,7 @@ defmodule PTAX.Quotation do
         |> Map.get("data_hora_cotacao")
         |> Timex.parse!("{ISO:Extended}")
         |> Timex.Timezone.convert("America/Sao_Paulo"),
-      bulletin: Bulletin.from(value["tipo_boletim"])
+      bulletin: bulletin
     }
 
     struct!(__MODULE__, params)
