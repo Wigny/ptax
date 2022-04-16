@@ -16,7 +16,7 @@ defmodule PTAX do
   ## Examples
 
       iex> PTAX.currencies()
-      {:ok, ~w[GBP EUR USD]a}
+      {:ok, ~w[BRL EUR GBP USD]a}
   """
   @spec currencies :: {:ok, list(currency)} | {:error, Error.t()}
   def currencies do
@@ -24,8 +24,9 @@ defmodule PTAX do
 
     with {:ok, response} <- Requests.response(result) do
       currencies = Enum.map(response, &String.to_atom(&1["simbolo"]))
+      currencies = [:BRL | currencies]
 
-      {:ok, currencies}
+      {:ok, Enum.sort(currencies)}
     end
   end
 

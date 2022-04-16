@@ -11,7 +11,7 @@ This package can be installed by adding `ptax` to your list of dependencies in `
 ```elixir
 def deps do
   [
-    {:ptax, "~> 0.1"}
+    {:ptax, "~> 1.0"}
   ]
 end
 ```
@@ -47,7 +47,7 @@ iex> PTAX.Quotation.list(:GBP, Date.range(~D[2021-12-24], ~D[2021-12-26]))
 ### Getting a currency quotation for a specific date and bulletin
 
 ```elixir
-iex> PTAX.Quotation.get(:GBP, ~D[2021-12-24], PTAX.Quotation.Bulletin.Closing)
+iex> PTAX.Quotation.get(:GBP, ~D[2021-12-24], :closing)
 {:ok, %PTAX.Quotation{...}}
 ```
 

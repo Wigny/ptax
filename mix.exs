@@ -4,7 +4,7 @@ defmodule PTAX.MixProject do
   def project do
     [
       app: :ptax,
-      version: "1.1.0",
+      version: "1.1.1",
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:gettext] ++ Mix.compilers(),
@@ -33,7 +33,6 @@ defmodule PTAX.MixProject do
       {:tesla_keys, "~> 0.1"},
       {:jason, ">= 1.0.0"},
       {:typed_struct, "~> 0.3"},
-      {:enum_type, "~> 1.1"},
       {:decimal, "~> 2.0"},
       {:timex, "~> 3.7"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
