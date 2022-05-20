@@ -10,6 +10,12 @@ defmodule PTAX.Quotation do
   @typep period :: Date.Range.t()
   @typep bulletin :: :opening | :intermediary | :closing
 
+  @bulletin [
+    opening: "Abertura",
+    intermediary: "Intermediário",
+    closing: "Fechamento"
+  ]
+
   typedstruct enforce: true do
     field :pair, Money.Pair.t()
     field :quoted_in, DateTime.t()
@@ -80,92 +86,88 @@ defmodule PTAX.Quotation do
         ]
       }
   """
-  @spec list(
-          currency,
-          period,
-          bulletin | list(bulletin) | nil
-        ) :: {:ok, list(t)} | {:error, Error.t()}
-  def list(currency, period, bulletin \\ nil) do
-    params = [
-      {"moeda", if(currency == :BRL, do: :USD, else: currency)},
-      {"dataInicial", Timex.format!(period.first, "%m-%d-%Y", :strftime)},
-      {"dataFinalCotacao", Timex.format!(period.last, "%m-%d-%Y", :strftime)}
+  @spec list(currency, period, bulletin | nil) ::
+          {:ok, list(t)} | {:error, Error.t()}
+  def list(currency, period, bulletin \\ nil)
+
+  def list(:BRL, period, bulletin) do
+    opts = [
+      odata: [
+        params: [
+          {"moeda", :USD},
+          {"dataInicial", Timex.format!(period.first, "%m-%d-%Y", :strftime)},
+          {"dataFinalCotacao", Timex.format!(period.last, "%m-%d-%Y", :strftime)}
+        ],
+        query: [
+          filter: [{"tipoBoletim", @bulletin[bulletin]}]
+        ]
+      ]
     ]
 
-    quotation_request = Requests.get("/CotacaoMoedaPeriodo", opts: [odata_params: params])
+    with {:ok, %{body: quotations}} <- Requests.get("/CotacaoMoedaPeriodo", opts: opts) do
+      currency = %{"simbolo" => "BRL", "tipo_moeda" => "A"}
 
-    with {:ok, quotation} <- Requests.response(quotation_request) do
       result =
-        quotation
-        |> Enum.map(&(&1 |> prepare(currency) |> parse()))
-        |> filter(bulletin)
+        quotations
+        |> Enum.map(fn quotation ->
+          quotation
+          |> Map.put("paridade_compra", quotation["cotacao_compra"])
+          |> Map.put("paridade_venda", quotation["cotacao_venda"])
+        end)
+        |> Enum.map(&parse(&1, currency))
 
       {:ok, result}
     end
   end
 
-  defp prepare(quotation, :BRL) do
-    Map.merge(quotation, %{
-      "simbolo" => "BRL",
-      "tipo_moeda" => "A",
-      "paridade_compra" => quotation["cotacao_compra"],
-      "paridade_venda" => quotation["cotacao_venda"]
-    })
+  def list(currency_symbol, period, bulletin) do
+    opts = [
+      odata: [
+        params: [
+          {"moeda", currency_symbol},
+          {"dataInicial", Timex.format!(period.first, "%m-%d-%Y", :strftime)},
+          {"dataFinalCotacao", Timex.format!(period.last, "%m-%d-%Y", :strftime)}
+        ],
+        query: [
+          filter: [{"tipoBoletim", @bulletin[bulletin]}]
+        ]
+      ]
+    ]
+
+    with {:ok, %{body: quotations}} <- Requests.get("/CotacaoMoedaPeriodo", opts: opts) do
+      currency_opts = [odata: [query: [filter: [{"simbolo", currency_symbol}]]]]
+      {:ok, %{body: [currency]}} = Requests.get("/Moedas", opts: currency_opts)
+
+      result = Enum.map(quotations, &parse(&1, currency))
+
+      {:ok, result}
+    end
   end
 
-  defp prepare(quotation, currency_symbol) do
-    "/Moedas?$filter=simbolo%20eq%20':currency'"
-    |> Requests.get(opts: [path_params: [currency: currency_symbol]])
-    |> Requests.response()
-    |> elem(1)
-    |> hd()
-    |> Map.merge(quotation)
-  end
+  defp parse(quotation, currency) do
+    {base_currency, quoted_currency} = pair_symbols(currency["tipo_moeda"], currency["simbolo"])
 
-  defp parse(value) do
-    currency_symbol = String.to_existing_atom(value["simbolo"])
+    pair =
+      Money.Pair.new(
+        quotation["paridade_compra"],
+        quotation["paridade_venda"],
+        base_currency,
+        quoted_currency
+      )
 
-    {base_currency, quoted_currency} =
-      case value["tipo_moeda"] do
-        "A" -> {:USD, currency_symbol}
-        "B" -> {currency_symbol, :USD}
-      end
+    quoted_in =
+      quotation["data_hora_cotacao"]
+      |> Timex.parse!("{ISO:Extended}")
+      |> Timex.Timezone.convert("America/Sao_Paulo")
 
     bulletin =
-      case value["tipo_boletim"] do
-        "Abertura" -> :opening
-        "Intermediário" -> :intermediary
-        "Fechamento" -> :closing
-      end
+      @bulletin
+      |> Enum.find(fn {_key, value} -> value == quotation["tipo_boletim"] end)
+      |> elem(0)
 
-    params = %{
-      pair:
-        Money.Pair.new(
-          value["paridade_compra"],
-          value["paridade_venda"],
-          base_currency,
-          quoted_currency
-        ),
-      quoted_in:
-        value
-        |> Map.get("data_hora_cotacao")
-        |> Timex.parse!("{ISO:Extended}")
-        |> Timex.Timezone.convert("America/Sao_Paulo"),
-      bulletin: bulletin
-    }
-
-    struct!(__MODULE__, params)
+    struct!(__MODULE__, %{pair: pair, quoted_in: quoted_in, bulletin: bulletin})
   end
 
-  defp filter(quotations, nil) do
-    quotations
-  end
-
-  defp filter(quotations, bulletins) when is_list(bulletins) do
-    Enum.filter(quotations, &(&1.bulletin in bulletins))
-  end
-
-  defp filter(quotations, bulletin) do
-    Enum.filter(quotations, &(&1.bulletin == bulletin))
-  end
+  defp pair_symbols("A", symbol), do: {:USD, String.to_existing_atom(symbol)}
+  defp pair_symbols("B", symbol), do: {String.to_existing_atom(symbol), :USD}
 end

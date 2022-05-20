@@ -11,11 +11,12 @@ defmodule PTAX.Requests do
   defguardp is_error(status) when status in 500..599
 
   plug Tesla.Middleware.BaseUrl, "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata"
-  plug Tesla.Middleware.Query, [{"$format", "json"}]
-  plug PTAX.Requests.ODataParams
+  plug PTAX.Requests.Response
+  plug PTAX.Requests.ODataParams, query: [format: "json"]
   plug Tesla.Middleware.PathParams
   plug TeslaKeys.Middleware.Case
   plug Tesla.Middleware.JSON
+  # plug Tesla.Middleware.Logger
 
   @spec response(Tesla.Env.result()) :: {:ok, list} | {:error, Error.t()}
   def response({:ok, %{body: %{"value" => value}, status: status}})

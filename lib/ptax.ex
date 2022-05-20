@@ -20,13 +20,10 @@ defmodule PTAX do
   """
   @spec currencies :: {:ok, list(currency)} | {:error, Error.t()}
   def currencies do
-    result = Requests.get("/Moedas")
+    with {:ok, %{body: currencies}} <- Requests.get("/Moedas") do
+      codes = [:BRL | Enum.map(currencies, &String.to_atom(&1["simbolo"]))]
 
-    with {:ok, response} <- Requests.response(result) do
-      currencies = Enum.map(response, &String.to_atom(&1["simbolo"]))
-      currencies = [:BRL | currencies]
-
-      {:ok, Enum.sort(currencies)}
+      {:ok, Enum.sort(codes)}
     end
   end
 
