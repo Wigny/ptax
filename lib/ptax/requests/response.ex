@@ -33,9 +33,7 @@ defmodule PTAX.Requests.Response do
   end
 
   defp response({:ok, %{body: body, status: status}}) when is_client_error(status) do
-    details =
-      if captures = Regex.named_captures(~r"/\*(?<details>[\S\s]*?)\*/", body),
-        do: Jason.decode!(captures["details"])
+    details = decode_error_body(body)
 
     error =
       Error.new(
@@ -54,7 +52,7 @@ defmodule PTAX.Requests.Response do
         code: :server_error,
         message: "Unknown error",
         status: status,
-        details: body
+        details: decode_error_body(body)
       )
 
     {:error, error}
@@ -63,5 +61,17 @@ defmodule PTAX.Requests.Response do
   defp response({:error, error}) do
     error = Error.new(code: :network_error, message: "Request error", details: error)
     {:error, error}
+  end
+
+  defp decode_error_body(value) when is_binary(value) do
+    if captures = Regex.named_captures(~r"/\*(?<details>[\S\s]*?)\*/", value) do
+      Jason.decode!(captures["details"])
+    else
+      value
+    end
+  end
+
+  defp decode_error_body(value) do
+    value
   end
 end

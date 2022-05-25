@@ -9,7 +9,7 @@ defmodule PTAX.RequestsFixtures do
     mock(&env/1)
   end
 
-  defp env(%{url: "#{@base_url}/Moedas?$filter=simbolo%20eq%20'GBP'"}) do
+  defp env(%{url: "#{@base_url}/Moedas?$filter=simbolo%20eq%20'GBP'&$format=json"}) do
     body = %{
       "@odata_context" => "",
       "value" => [
@@ -24,7 +24,7 @@ defmodule PTAX.RequestsFixtures do
     json(body)
   end
 
-  defp env(%{url: "#{@base_url}/Moedas?$filter=simbolo%20eq%20'USD'"}) do
+  defp env(%{url: "#{@base_url}/Moedas?$filter=simbolo%20eq%20'USD'&$format=json"}) do
     body = %{
       "@odata_context" => "",
       "value" => [
@@ -39,7 +39,7 @@ defmodule PTAX.RequestsFixtures do
     json(body)
   end
 
-  defp env(%{url: "#{@base_url}/Moedas?$filter=simbolo%20eq%20'EUR'"}) do
+  defp env(%{url: "#{@base_url}/Moedas?$filter=simbolo%20eq%20'EUR'&$format=json"}) do
     body = %{
       "@odata_context" => "",
       "value" => [
@@ -54,7 +54,7 @@ defmodule PTAX.RequestsFixtures do
     json(body)
   end
 
-  defp env(%{url: "#{@base_url}/Moedas"}) do
+  defp env(%{url: "#{@base_url}/Moedas?$format=json"}) do
     body = %{
       "@odata_context" => "",
       "value" => [
@@ -81,7 +81,7 @@ defmodule PTAX.RequestsFixtures do
 
   defp env(%{
          url:
-           "#{@base_url}/CotacaoMoedaPeriodo(moeda='GBP',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')"
+           "#{@base_url}/CotacaoMoedaPeriodo(moeda='GBP',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')?$format=json"
        }) do
     body = %{
       "@odata_context" => "",
@@ -118,7 +118,28 @@ defmodule PTAX.RequestsFixtures do
 
   defp env(%{
          url:
-           "#{@base_url}/CotacaoMoedaPeriodo(moeda='USD',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')"
+           "#{@base_url}/CotacaoMoedaPeriodo(moeda='GBP',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')?$filter=tipoBoletim%20eq%20'Fechamento'&$format=json"
+       }) do
+    body = %{
+      "@odata_context" => "",
+      "value" => [
+        %{
+          "cotacao_compra" => 7.5776,
+          "cotacao_venda" => 7.5866,
+          "data_hora_cotacao" => "2021-12-24 11:04:02.178",
+          "paridade_compra" => 1.3402,
+          "paridade_venda" => 1.3406,
+          "tipo_boletim" => "Fechamento"
+        }
+      ]
+    }
+
+    json(body)
+  end
+
+  defp env(%{
+         url:
+           "#{@base_url}/CotacaoMoedaPeriodo(moeda='USD',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')&$format=json"
        }) do
     body = %{
       "@odata_context" => "",
@@ -139,6 +160,27 @@ defmodule PTAX.RequestsFixtures do
           "paridade_venda" => 1.0,
           "tipo_boletim" => "Intermediário"
         },
+        %{
+          "cotacao_compra" => 5.6541,
+          "cotacao_venda" => 5.6591,
+          "data_hora_cotacao" => "2021-12-24 11:04:02.178",
+          "paridade_compra" => 1.0,
+          "paridade_venda" => 1.0,
+          "tipo_boletim" => "Fechamento"
+        }
+      ]
+    }
+
+    json(body)
+  end
+
+  defp env(%{
+         url:
+           "#{@base_url}/CotacaoMoedaPeriodo(moeda='USD',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')?$filter=tipoBoletim%20eq%20'Fechamento'&$format=json"
+       }) do
+    body = %{
+      "@odata_context" => "",
+      "value" => [
         %{
           "cotacao_compra" => 5.6541,
           "cotacao_venda" => 5.6591,
@@ -192,7 +234,28 @@ defmodule PTAX.RequestsFixtures do
 
   defp env(%{
          url:
-           "#{@base_url}/CotacaoMoedaPeriodo(moeda='GBPS',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')"
+           "#{@base_url}/CotacaoMoedaPeriodo(moeda='EUR',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')?$filter=tipoBoletim%20eq%20'Fechamento'&$format=json"
+       }) do
+    body = %{
+      "@odata_context" => "",
+      "value" => [
+        %{
+          "cotacao_compra" => 6.3999,
+          "cotacao_venda" => 6.4078,
+          "data_hora_cotacao" => "2021-12-24 11:04:02.178",
+          "paridade_compra" => 1.1319,
+          "paridade_venda" => 1.1323,
+          "tipo_boletim" => "Fechamento"
+        }
+      ]
+    }
+
+    json(body)
+  end
+
+  defp env(%{
+         url:
+           "#{@base_url}/CotacaoMoedaPeriodo(moeda='GBPS',dataInicial='12-24-2021',dataFinalCotacao='12-24-2021')?$filter=tipoBoletim%20eq%20'Fechamento'&$format=json"
        }) do
     body = ~s(/*{
       "codigo" : 500,

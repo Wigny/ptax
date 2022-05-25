@@ -5,76 +5,89 @@ defmodule PTAX.Requests.ODataParams do
 
   @impl true
   def call(env, next, opts \\ []) do
-    odata_opts =
-      env.opts
-      |> Keyword.get(:odata, [])
-      |> Keyword.merge(opts, fn _k, v1, v2 -> v1 ++ v2 end)
+    odata_opts = opts(env.opts, opts)
 
-    url = build_url(env.url, Map.new(odata_opts))
+    url = build_url(env.url, odata_opts)
     Tesla.run(%{env | url: url}, next)
+  end
+
+  defp opts(env_opts, opts) do
+    env_opts
+    |> Keyword.get(:odata, [])
+    |> Keyword.merge(opts, fn _k, v1, v2 -> v1 ++ v2 end)
+    |> Map.new()
   end
 
   defp build_url(url, opts) do
     join = if String.contains?(url, "?"), do: "&", else: "?"
 
-    (url <> encode_params(opts[:params]) <> encode_query(join, opts[:query])) |> IO.inspect()
+    params = if p = encode_params(opts[:params]), do: "(#{p})", else: ""
+    query = if q = encode_query(opts[:query]), do: join <> q, else: ""
+
+    url <> params <> query
   end
 
-  defp encode_params(nil) do
-    ""
+  defp encode_params({_key, nil}) do
+    nil
   end
 
-  defp encode_params(params) do
-    encoded =
-      params
-      |> Enum.map(fn
-        {_key, nil} -> nil
-        {key, value} -> "#{key}='#{value}'"
-      end)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.join(",")
-
-    "(#{encoded})"
+  defp encode_params({key, value}) do
+    "#{key}='#{value}'"
   end
 
-  defp encode_query(_join, nil) do
-    ""
+  defp encode_params(value) when is_list(value) do
+    encode_keyword_list(value, &encode_params/1, ",")
   end
 
-  defp encode_query(join, query) do
-    encoded =
-      query
-      |> Enum.map(fn
-        {_key, nil} ->
-          nil
-
-        {key, value} ->
-          value = encode_query_value(value)
-          if value != "", do: "$#{key}=#{value}", else: nil
-      end)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.join("&")
-
-    if "" != encoded, do: join <> encoded, else: encoded
-  end
-
-  defp encode_query_value(value) when is_binary(value) do
+  defp encode_params(value) do
     value
   end
 
+  defp encode_query({_key, nil}) do
+    nil
+  end
+
+  defp encode_query({key, value}) do
+    if v = encode_query_value(value), do: "$#{key}=#{v}"
+  end
+
+  defp encode_query(value) when is_list(value) do
+    encode_keyword_list(value, &encode_query/1, "&")
+  end
+
+  defp encode_query(value) do
+    value
+  end
+
+  defp encode_query_value({_key, nil}) do
+    nil
+  end
+
+  defp encode_query_value({_key, []}) do
+    nil
+  end
+
+  defp encode_query_value({key, values}) when is_list(values) do
+    "#{key}%20in%20(#{Enum.map_join(values, ", ", &"'#{&1}'")})"
+  end
+
+  defp encode_query_value({key, value}) do
+    "#{key}%20eq%20'#{value}'"
+  end
+
   defp encode_query_value(value) when is_list(value) do
-    Enum.map(value, fn
-      {_key, nil} ->
-        nil
+    encode_keyword_list(value, &encode_query_value/1, " and ")
+  end
 
-      {key, values} when is_list(values) ->
-        "#{key} in (#{Enum.map_join(values, ", ", &"'#{&1}'")})"
+  defp encode_query_value(value) do
+    value
+  end
 
-      {key, value} ->
-        "#{key}%20eq%20'#{value}'"
-    end)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join(" and ")
-    |> IO.inspect()
+  defp encode_keyword_list(list, encoder, joiner) do
+    list = list |> Enum.map(&then(&1, encoder)) |> Enum.reject(&is_nil/1)
+
+    unless Enum.empty?(list) do
+      Enum.join(list, joiner)
+    end
   end
 end

@@ -86,25 +86,11 @@ defmodule PTAX.Quotation do
         ]
       }
   """
-  @spec list(currency, period, bulletin | nil) ::
-          {:ok, list(t)} | {:error, Error.t()}
+  @spec list(currency, period, bulletin | nil) :: {:ok, list(t)} | {:error, Error.t()}
   def list(currency, period, bulletin \\ nil)
 
   def list(:BRL, period, bulletin) do
-    opts = [
-      odata: [
-        params: [
-          {"moeda", :USD},
-          {"dataInicial", Timex.format!(period.first, "%m-%d-%Y", :strftime)},
-          {"dataFinalCotacao", Timex.format!(period.last, "%m-%d-%Y", :strftime)}
-        ],
-        query: [
-          filter: [{"tipoBoletim", @bulletin[bulletin]}]
-        ]
-      ]
-    ]
-
-    with {:ok, %{body: quotations}} <- Requests.get("/CotacaoMoedaPeriodo", opts: opts) do
+    with {:ok, quotations} <- request(:USD, period, @bulletin[bulletin]) do
       currency = %{"simbolo" => "BRL", "tipo_moeda" => "A"}
 
       result =
@@ -113,34 +99,41 @@ defmodule PTAX.Quotation do
           quotation
           |> Map.put("paridade_compra", quotation["cotacao_compra"])
           |> Map.put("paridade_venda", quotation["cotacao_venda"])
+          |> parse(currency)
         end)
-        |> Enum.map(&parse(&1, currency))
 
       {:ok, result}
     end
   end
 
   def list(currency_symbol, period, bulletin) do
+    currency_opts = [odata: [query: [filter: [{"simbolo", currency_symbol}]]]]
+
+    with {:ok, quotations} <- request(currency_symbol, period, @bulletin[bulletin]) do
+      {:ok, %{body: [currency]}} = Requests.get("/Moedas", opts: currency_opts)
+
+      result = Enum.map(quotations, fn quotation -> parse(quotation, currency) end)
+
+      {:ok, result}
+    end
+  end
+
+  defp request(currency, period, bulletin) do
     opts = [
       odata: [
         params: [
-          {"moeda", currency_symbol},
+          {"moeda", currency},
           {"dataInicial", Timex.format!(period.first, "%m-%d-%Y", :strftime)},
           {"dataFinalCotacao", Timex.format!(period.last, "%m-%d-%Y", :strftime)}
         ],
         query: [
-          filter: [{"tipoBoletim", @bulletin[bulletin]}]
+          filter: [{"tipoBoletim", bulletin}]
         ]
       ]
     ]
 
     with {:ok, %{body: quotations}} <- Requests.get("/CotacaoMoedaPeriodo", opts: opts) do
-      currency_opts = [odata: [query: [filter: [{"simbolo", currency_symbol}]]]]
-      {:ok, %{body: [currency]}} = Requests.get("/Moedas", opts: currency_opts)
-
-      result = Enum.map(quotations, &parse(&1, currency))
-
-      {:ok, result}
+      {:ok, quotations}
     end
   end
 
