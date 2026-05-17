@@ -1,6 +1,9 @@
 defmodule PTAX do
   @moduledoc """
   Converts between currencies using the Brazilian Central Bank's PTAX rates.
+
+  Rates are computed as the mid-point between BCB's closing bid and ask quotes
+  for each currency pair.
   """
 
   @doc """
@@ -31,7 +34,7 @@ defmodule PTAX do
   ## Examples
 
       iex> PTAX.exchange(Money.new!(:GBP, "50"), :BRL, ~D[2026-05-15])
-      {:ok, Money.new!(:BRL, "7.41")}
+      {:ok, Money.new!(:BRL, "337.63")}
 
   """
   @spec exchange(Money.t(), Money.currency_reference(), Date.t()) ::

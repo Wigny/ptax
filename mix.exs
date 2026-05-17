@@ -4,7 +4,7 @@ defmodule PTAX.MixProject do
   def project do
     [
       app: :ptax,
-      version: "2.0.0",
+      version: "2.0.1",
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -12,12 +12,6 @@ defmodule PTAX.MixProject do
       package: package(),
       docs: docs(),
       deps: deps()
-    ]
-  end
-
-  def application do
-    [
-      extra_applications: [:logger]
     ]
   end
 
