@@ -1,83 +1,46 @@
 defmodule PTAX do
   @moduledoc """
-  Gathers supported currency listing and conversion functions
+  Converts between currencies using the Brazilian Central Bank's PTAX rates.
   """
 
-  alias PTAX.{Error, Money, Quotation, Requests}
-
-  @type money :: Money.t()
-  @type currency :: Money.currency()
-  @type exchange_opts :: [to: currency, date: Date.t()] | %{to: currency, date: Date.t()}
-  @type error :: Error.t()
-
   @doc """
-  Returns a list of supported currencies
+  Exchanges a `Money` amount to the given currency using the latest known PTAX rates.
+
+  Returns `{:ok, Money.t()}` on success, or `{:error, reason}` if the rates
+  are unavailable or the currency is not supported.
 
   ## Examples
 
-      iex> PTAX.currencies()
-      {:ok, ~w[BRL EUR GBP USD]a}
+      iex> {:ok, %Money{}} = PTAX.exchange(Money.new!(:USD, "100"), :BRL)
+
   """
-  @spec currencies :: {:ok, list(currency)} | {:error, Error.t()}
-  def currencies do
-    result = Requests.get("/Moedas")
-
-    with {:ok, response} <- Requests.response(result) do
-      currencies = Enum.map(response, &String.to_atom(&1["simbolo"]))
-      currencies = [:BRL | currencies]
-
-      {:ok, Enum.sort(currencies)}
+  @spec exchange(Money.t(), Money.currency_reference()) ::
+          {:ok, Money.t()} | {:error, {module(), binary()}}
+  def exchange(%Money{} = money, currency) do
+    with {:ok, money} <- Money.to_currency(money, currency) do
+      {:ok, Money.round(money, currency_digits: :cash)}
     end
   end
 
   @doc """
-  Converts a value from one currency to another
+  Exchanges a `Money` amount to the given currency using PTAX rates for the given date.
+
+  Returns `{:ok, Money.t()}` on success, or `{:error, reason}` if the rates
+  are unavailable or the currency is not supported.
 
   ## Examples
 
-      iex> PTAX.exchange(PTAX.Money.new(5, :USD), to: :GBP, date: ~D[2021-12-24])
-      {:ok, PTAX.Money.new("3.7297", :GBP)}
+      iex> PTAX.exchange(Money.new!(:GBP, "50"), :BRL, ~D[2026-05-15])
+      {:ok, Money.new!(:BRL, "7.41")}
 
-      iex> PTAX.exchange(PTAX.Money.new("546.56", :GBP), to: :USD, date: ~D[2021-12-24])
-      {:ok, PTAX.Money.new("732.4997", :USD)}
-
-      iex> PTAX.exchange(PTAX.Money.new("15.69", :EUR), to: :GBP, date: ~D[2021-12-24])
-      {:ok, PTAX.Money.new("13.2474", :GBP)}
   """
-  @spec exchange(money, opts :: exchange_opts) :: {:ok, money} | {:error, error}
-  def exchange(money, opts) when is_list(opts) do
-    exchange(money, Map.new(opts))
-  end
+  @spec exchange(Money.t(), Money.currency_reference(), Date.t()) ::
+          {:ok, Money.t()} | {:error, {module(), binary()}}
+  def exchange(%Money{} = money, currency, date) do
+    rates = Money.ExchangeRates.historic_rates(date)
 
-  def exchange(money, %{to: to, date: date}) do
-    with {:ok, %{pair: base_pair}} <- Quotation.get(money.currency, date),
-         {:ok, %{pair: quoted_pair}} <- Quotation.get(to, date) do
-      pair = Money.Pair.combine(base_pair, quoted_pair)
-      value = Money.exchange(money, pair)
-
-      {:ok, value}
-    end
-  end
-
-  @doc """
-  Similar to `exchange/2`, but throws an error if the amount cannot be converted.
-
-  ## Examples
-
-      iex> PTAX.exchange!(PTAX.Money.new(10, :USD), to: :BRL, date: ~D[2021-12-24])
-      PTAX.Money.new("56.541", :BRL)
-
-      iex> PTAX.exchange!(PTAX.Money.new("15.45", :USD), to: :GBP, date: ~D[2021-12-24])
-      PTAX.Money.new("11.5247", :GBP)
-
-      iex> PTAX.exchange!(PTAX.Money.new("15.45", :USD), to: :GBPS, date: ~D[2021-12-24])
-      ** (PTAX.Error) Unknown error
-  """
-  @spec exchange!(money, opts :: exchange_opts) :: money
-  def exchange!(money, opts) do
-    case exchange(money, opts) do
-      {:ok, result} -> result
-      {:error, error} -> raise error
+    with {:ok, money} <- Money.to_currency(money, currency, rates) do
+      {:ok, Money.round(money, currency_digits: :cash)}
     end
   end
 end

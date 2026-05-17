@@ -1,80 +1,48 @@
 # PTAX
 
-> This package is for learning purposes and its use in production is not yet recommended.
-
-A currency converter that uses the API provided by the Brazilian Open Data Portal to perform quotes
+A currency converter backed by the Brazilian Central Bank (BCB) PTAX closing rates.
 
 ## Installation
-
-This package can be installed by adding `ptax` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:ptax, "~> 1.0"}
+    {:ptax, "~> 2.0"}
   ]
 end
 ```
 
 ## Configuration
 
-Install and configure a Tesla adapter:
+PTAX integrates with `ex_money`'s exchange rate system. Add it to your config:
 
 ```elixir
 # config/config.exs
-
-config :tesla, adapter: Tesla.Adapter.Hackney
+config :ex_money, api_module: PTAX.ExchangeRates
 ```
-
-> See Tesla [installation](https://hexdocs.pm/tesla/readme.html#installation) and [adapters](https://hexdocs.pm/tesla/readme.html#adapters) docs.
 
 ## Usage
 
-### Listing supported currencies
+### Convert using the latest known rates
 
 ```elixir
-iex> PTAX.currencies()
-{:ok, [:EUR, :GBP, ...]}
+iex> PTAX.exchange(Money.new!(:USD, "100"), :BRL)
+{:ok, Money.new!(:BRL, "506.48")}
 ```
 
-### Listing a currency quotation for a date range
+### Convert using rates for a specific date
 
 ```elixir
-iex> PTAX.Quotation.list(:GBP, Date.range(~D[2021-12-24], ~D[2021-12-26]))
-{:ok, [%PTAX.Quotation{...}, ...]}
+iex> PTAX.exchange(Money.new!(:GBP, "50"), :BRL, ~D[2026-05-15])
+{:ok, Money.new!(:BRL, "337.60")}
 ```
 
-### Getting a currency quotation for a specific date and bulletin
+Dates with no BCB data (weekends, holidays) return `{:error, {Money.ExchangeRateError, "404"}}`. The latest-rates lookup automatically walks back up to 7 days to find the most recent available data.
 
-```elixir
-iex> PTAX.Quotation.get(:GBP, ~D[2021-12-24], :closing)
-{:ok, %PTAX.Quotation{...}}
-```
+## See also
 
-### Exchange a currency amount to another
+PTAX only provides the rate source. For richer operations, use `ex_money` directly:
 
-```elixir
-iex> PTAX.exchange(PTAX.Money.new(5, :GBP), to: :EUR, date: ~D[2021-12-24])
-{:ok, #Money<5.918, EUR>}
-```
-
-### Combine two currency pairs, based on USD as the common currency
-
-```elixir
-iex> alias PTAX.Money.Pair
-...> gbp_usd = Pair.new(1.3402, 1.3406, :GBP, :USD)
-...> eur_usd = Pair.new(1.1319, 1.1323, :EUR, :USD)
-...> Pair.combine(gbp_usd, eur_usd)
-#Money.Pair<1.1836086/1.1843802, GBP/EUR>
-```
-
-## Exchange a currency amount given the currency pair
-
-```elixir
-iex> alias PTAX.Money
-...> pair = Money.Pair.new(1.1836086, 1.1843802, :GBP, :EUR)
-...> Money.exchange(Money.new(5, :GBP), pair)
-#Money<5.918, EUR>
-...> Money.exchange(Money.new(5, :EUR), pair)
-#Money<4.2216, GBP>
-```
+- [`Money.to_currency/2,3`](https://hexdocs.pm/ex_money/Money.html#to_currency/3) — convert between any two currencies
+- [`Money.cross_rate/2`](https://hexdocs.pm/ex_money/Money.html#cross_rate/2) — derive a cross rate between two currencies
+- [`Money.ExchangeRates`](https://hexdocs.pm/ex_money/Money.ExchangeRates.html) — access and configure the exchange rate backend

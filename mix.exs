@@ -4,17 +4,14 @@ defmodule PTAX.MixProject do
   def project do
     [
       app: :ptax,
-      version: "1.1.2",
-      elixir: "~> 1.13",
-      elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: [:gettext] ++ Mix.compilers(),
+      version: "2.0.0",
+      elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
+      elixirc_paths: elixirc_paths(Mix.env()),
       description: description(),
       package: package(),
       docs: docs(),
-      deps: deps(),
-      dialyzer: dialyzer(),
-      preferred_cli_env: ["test.watch": :test]
+      deps: deps()
     ]
   end
 
@@ -25,29 +22,17 @@ defmodule PTAX.MixProject do
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_), do: ["lib"]
+  defp elixirc_paths(_env), do: ["lib"]
 
   defp deps do
     [
-      {:tesla, "~> 1.4"},
-      {:tesla_keys, "~> 0.1"},
-      {:jason, ">= 1.0.0"},
-      {:typed_struct, "~> 0.3"},
-      {:decimal, "~> 2.0"},
-      {:timex, "~> 3.7"},
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
-      {:mix_test_watch, "~> 1.1", only: [:dev, :test], runtime: false}
+      {:ex_money, "~> 6.0"},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
 
-  defp dialyzer do
-    [plt_file: {:no_warn, "priv/plts/dialyzer.plt"}]
-  end
-
   defp description do
-    "A currency converter that uses the API provided by the Brazilian Open Data Portal to perform quotes."
+    "A currency converter backed by the Brazilian Central Bank (BCB) PTAX closing rates."
   end
 
   defp package do
