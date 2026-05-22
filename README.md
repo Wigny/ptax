@@ -1,26 +1,32 @@
 # PTAX
 
-A currency converter backed by the Brazilian Central Bank (BCB) PTAX closing rates.
+PTAX is the official exchange rate published daily by the Brazilian Central Bank (Banco Central do Brasil, BCB). It is the reference rate used in financial contracts, tax reporting, and regulatory filings in Brazil.
 
-Rates are the mid-point between BCB's closing bid and ask quotes for each currency pair.
+Quotes are fetched from the BCB's [exchange rates page](https://www.bcb.gov.br/estabilidadefinanceira/cotacoestodas) and represent the closing bid and ask rates for each currency pair against the Brazilian Real (BRL). The rate exposed by this library is the mid-point between those two quotes.
 
 ## Installation
 
+Add the dependency and configure `ex_money` to use PTAX as its rate source:
+
 ```elixir
+# mix.exs
 def deps do
   [
     {:ptax, "~> 2.0"}
   ]
 end
-```
 
-## Configuration
-
-PTAX integrates with `ex_money`'s exchange rate system. Add it to your config:
-
-```elixir
 # config/config.exs
 config :ex_money, api_module: PTAX.ExchangeRates
+```
+
+In scripts and Livebook notebooks:
+
+```elixir
+Mix.install(
+  [{:ptax, "~> 2.0"}],
+  config: [ex_money: [api_module: PTAX.ExchangeRates]]
+)
 ```
 
 ## Usage
@@ -30,6 +36,9 @@ config :ex_money, api_module: PTAX.ExchangeRates
 ```elixir
 iex> PTAX.exchange(Money.new!(:USD, "100"), :BRL)
 {:ok, %Money{}}
+
+iex> PTAX.exchange!(Money.new!(:USD, "100"), :BRL)
+%Money{}
 ```
 
 The lookup automatically walks back up to 7 days to find the most recent available data.
@@ -39,9 +48,20 @@ The lookup automatically walks back up to 7 days to find the most recent availab
 ```elixir
 iex> PTAX.exchange(Money.new!(:GBP, "50"), :BRL, ~D[2026-05-15])
 {:ok, Money.new!(:BRL, "337.63")}
+
+iex> PTAX.exchange!(Money.new!(:GBP, "50"), :BRL, ~D[2026-05-15])
+Money.new!(:BRL, "337.63")
 ```
 
-Dates with no BCB data (weekends, holidays) return `{:error, {Money.ExchangeRateError, "404"}}`.
+Dates with no BCB data (weekends, holidays) return `{:error, reason}` or raise with the bang variants:
+
+```elixir
+iex> PTAX.exchange(Money.new!(:USD, "100"), :BRL, ~D[2025-12-25])
+{:error, {Money.ExchangeRateError, "no exchange rates available for 2025-12-25"}}
+
+iex> PTAX.exchange!(Money.new!(:USD, "100"), :BRL, ~D[2025-12-25])
+** (Money.ExchangeRateError) no exchange rates available for 2025-12-25
+```
 
 ## See also
 
