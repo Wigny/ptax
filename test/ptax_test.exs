@@ -14,4 +14,9 @@ defmodule PTAXTest do
     assert {:error, {Money.ExchangeRateError, ":timeout"}} =
              PTAX.exchange(Money.new!(:USD, "100"), :BRL, ~D[2026-01-01])
   end
+
+  test "exchange/2 returns an error for an unknown target currency" do
+    assert {:error, {Money.UnknownCurrencyError, _message}} =
+             PTAX.exchange(Money.new!(:USD, "100"), :XYZ)
+  end
 end

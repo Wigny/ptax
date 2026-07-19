@@ -5,6 +5,12 @@ defmodule PTAX.Application do
 
   @impl true
   def start(_type, _args) do
-    Supervisor.start_link([PTAX.Retriever], strategy: :one_for_one, name: PTAX.Supervisor)
+    children = [
+      {Registry, keys: :unique, name: PTAX.Registry},
+      {PTAX.Retriever, :bid},
+      {PTAX.Retriever, :ask}
+    ]
+
+    Supervisor.start_link(children, strategy: :one_for_one, name: PTAX.Supervisor)
   end
 end

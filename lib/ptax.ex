@@ -2,11 +2,13 @@ defmodule PTAX do
   @moduledoc """
   Converts between currencies using the Brazilian Central Bank's PTAX rates.
 
-  Rates are computed as the mid-point between BCB's closing bid and ask quotes
-  for each currency pair.
+  Each conversion uses the published quote that matches its direction: the bid
+  rate for the currency being sold into BRL, and the ask rate for the currency
+  being bought with BRL. A cross conversion between two non-BRL currencies sells
+  the source at its bid and buys the target at its ask.
   """
 
-  alias Money.ExchangeRates.Retriever
+  alias PTAX.Retriever
 
   @doc """
   Exchanges a `Money` amount to the given currency using the latest known PTAX rates.
@@ -24,10 +26,10 @@ defmodule PTAX do
   """
   @spec exchange(Money.t(), Money.currency_reference()) ::
           {:ok, Money.t()} | {:error, {Exception.t(), String.t()}}
-  def exchange(%Money{} = money, currency) do
-    rates = Retriever.latest_rates(PTAX.Retriever)
-
-    with {:ok, money} <- Money.to_currency(money, currency, rates) do
+  def exchange(%Money{} = money, to_currency) do
+    with {:ok, to_currency} <- Money.validate_currency(to_currency),
+         {:ok, rates} <- latest_rates(money.currency, to_currency),
+         {:ok, money} <- Money.to_currency(money, to_currency, rates) do
       {:ok, Money.round(money, currency_digits: :cash)}
     end
   end
@@ -46,12 +48,11 @@ defmodule PTAX do
 
   """
   @spec exchange!(Money.t(), Money.currency_reference()) :: Money.t()
-  def exchange!(%Money{} = money, currency) do
-    rates = Retriever.latest_rates(PTAX.Retriever)
-
-    money
-    |> Money.to_currency!(currency, rates)
-    |> Money.round(currency_digits: :cash)
+  def exchange!(%Money{} = money, to_currency) do
+    case exchange(money, to_currency) do
+      {:ok, money} -> money
+      {:error, {exception, reason}} -> raise exception, reason
+    end
   end
 
   @doc """
@@ -63,7 +64,7 @@ defmodule PTAX do
   ## Examples
 
       iex> PTAX.exchange(Money.new(:GBP, "50"), :BRL, ~D[2026-05-15])
-      {:ok, Money.new(:BRL, "337.63")}
+      {:ok, Money.new(:BRL, "337.60")}
 
       iex> PTAX.exchange(Money.new(:USD, "100"), :BRL, ~D[2025-12-25])
       {:error, {Money.ExchangeRateError, "no exchange rates available for 2025-12-25"}}
@@ -71,10 +72,10 @@ defmodule PTAX do
   """
   @spec exchange(Money.t(), Money.currency_reference(), Date.t()) ::
           {:ok, Money.t()} | {:error, {Exception.t(), String.t()}}
-  def exchange(%Money{} = money, currency, date) do
-    rates = Retriever.historic_rates(PTAX.Retriever, date)
-
-    with {:ok, money} <- Money.to_currency(money, currency, rates) do
+  def exchange(%Money{} = money, to_currency, date) do
+    with {:ok, to_currency} <- Money.validate_currency(to_currency),
+         {:ok, rates} <- historic_rates(money.currency, to_currency, date),
+         {:ok, money} <- Money.to_currency(money, to_currency, rates) do
       {:ok, Money.round(money, currency_digits: :cash)}
     end
   end
@@ -87,18 +88,31 @@ defmodule PTAX do
   ## Examples
 
       iex> PTAX.exchange!(Money.new(:GBP, "50"), :BRL, ~D[2026-05-15])
-      Money.new(:BRL, "337.63")
+      Money.new(:BRL, "337.60")
 
       iex> PTAX.exchange!(Money.new(:USD, "100"), :BRL, ~D[2025-12-25])
       ** (Money.ExchangeRateError) no exchange rates available for 2025-12-25
 
   """
   @spec exchange!(Money.t(), Money.currency_reference(), Date.t()) :: Money.t()
-  def exchange!(%Money{} = money, currency, date) do
-    rates = Retriever.historic_rates(PTAX.Retriever, date)
+  def exchange!(%Money{} = money, to_currency, date) do
+    case exchange(money, to_currency, date) do
+      {:ok, money} -> money
+      {:error, {exception, reason}} -> raise exception, reason
+    end
+  end
 
-    money
-    |> Money.to_currency!(currency, rates)
-    |> Money.round(currency_digits: :cash)
+  defp latest_rates(from, to) do
+    with {:ok, bid} <- Retriever.latest_rates(:bid),
+         {:ok, ask} <- Retriever.latest_rates(:ask) do
+      {:ok, %{from => Map.get(bid, from), to => Map.get(ask, to)}}
+    end
+  end
+
+  defp historic_rates(from, to, date) do
+    with {:ok, bid} <- Retriever.historic_rates(:bid, date),
+         {:ok, ask} <- Retriever.historic_rates(:ask, date) do
+      {:ok, %{from => Map.get(bid, from), to => Map.get(ask, to)}}
+    end
   end
 end

@@ -2,7 +2,7 @@
 
 PTAX is the official exchange rate published daily by the Brazilian Central Bank (Banco Central do Brasil, BCB). It is the reference rate used in financial contracts, tax reporting, and regulatory filings in Brazil.
 
-Quotes are fetched from the BCB's [exchange rates page](https://www.bcb.gov.br/estabilidadefinanceira/cotacoestodas) and represent the closing bid and ask rates for each currency pair against the Brazilian Real (BRL). The rate exposed by this library is the mid-point between those two quotes.
+Quotes are fetched from the BCB's [exchange rates page](https://www.bcb.gov.br/estabilidadefinanceira/cotacoestodas) and represent the closing bid and ask rates for each currency pair against the Brazilian Real (BRL). Each conversion uses the quote that matches its direction: the bid rate for the currency being sold into BRL and the ask rate for the currency being bought with BRL. A conversion between two non-BRL currencies sells the source at its bid and buys the target at its ask.
 
 ## Installation
 
@@ -53,10 +53,10 @@ The lookup automatically walks back up to 7 days to find the most recent availab
 
 ```elixir
 iex> PTAX.exchange(Money.new!(:GBP, "50"), :BRL, ~D[2026-05-15])
-{:ok, Money.new!(:BRL, "337.63")}
+{:ok, Money.new!(:BRL, "337.60")}
 
 iex> PTAX.exchange!(Money.new!(:GBP, "50"), :BRL, ~D[2026-05-15])
-Money.new!(:BRL, "337.63")
+Money.new!(:BRL, "337.60")
 ```
 
 Dates with no BCB data (weekends, holidays) return `{:error, reason}` or raise with the bang variants:
@@ -71,16 +71,16 @@ iex> PTAX.exchange!(Money.new!(:USD, "100"), :BRL, ~D[2025-12-25])
 
 ## Using PTAX rates with `ex_money`
 
-PTAX runs as an isolated, named `ex_money` retriever (`PTAX.Retriever`), so it never interferes with any other `ex_money` retriever your application runs — you're free to use other providers for other currencies alongside it.
+PTAX runs two isolated, named `ex_money` retrievers — one holding the bid rates and one the ask rates — so it never interferes with any other `ex_money` retriever your application runs.
 
-To reach `ex_money`'s richer operations (arbitrary conversions, cross rates) with PTAX data, fetch rates from `PTAX.Retriever` and pass them to any `ex_money` function that accepts a rates map:
+To reach `ex_money`'s richer operations (arbitrary conversions, cross rates) with PTAX data, fetch a side's rates from `PTAX.Retriever` and pass them to any `ex_money` function that accepts a rates map:
 
 ```elixir
-rates = Money.ExchangeRates.Retriever.latest_rates(PTAX.Retriever)
-Money.to_currency(Money.new!(:USD, "100"), :BRL, rates)
+bid = PTAX.Retriever.latest_rates(:bid)
+Money.to_currency(Money.new!(:USD, "100"), :BRL, bid)
 
-historic = Money.ExchangeRates.Retriever.historic_rates(PTAX.Retriever, ~D[2026-05-15])
-Money.to_currency(Money.new!(:GBP, "50"), :BRL, historic)
+ask = PTAX.Retriever.historic_rates(:ask, ~D[2026-05-15])
+Money.to_currency(Money.new!(:BRL, "50"), :USD, ask)
 ```
 
 ## See also

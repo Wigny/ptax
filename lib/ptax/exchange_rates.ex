@@ -32,11 +32,11 @@ defmodule PTAX.ExchangeRates do
 
     with {:ok, body} when is_binary(body) <-
            @http_client.get(url, verify_peer: config.verify_peer) do
-      {:ok, decode_rates(body)}
+      {:ok, decode_rates(body, config.retriever_options)}
     end
   end
 
-  defp decode_rates(body) do
+  defp decode_rates(body, options) do
     body
     |> String.split("\n", trim: true)
     |> Enum.reduce(%{BRL: Decimal.new("1")}, fn line, acc ->
@@ -44,15 +44,15 @@ defmodule PTAX.ExchangeRates do
 
       case Money.validate_currency(currency) do
         {:ok, currency} ->
-          ask = Decimal.new(String.replace(ask, ",", "."))
-          bid = Decimal.new(String.replace(bid, ",", "."))
-          mid = Decimal.div(Decimal.add(ask, bid), 2)
-
-          Map.put(acc, currency, Decimal.div(Decimal.new("1"), mid))
+          rate = rate(bid, ask, options)
+          Map.put(acc, currency, Decimal.div(Decimal.new("1"), rate))
 
         {:error, {Money.UnknownCurrencyError, _message}} ->
           acc
       end
     end)
   end
+
+  defp rate(bid, _ask, %{quote_side: :bid}), do: Decimal.new(String.replace(bid, ",", "."))
+  defp rate(_bid, ask, %{quote_side: :ask}), do: Decimal.new(String.replace(ask, ",", "."))
 end
