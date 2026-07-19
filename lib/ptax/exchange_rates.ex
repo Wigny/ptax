@@ -1,21 +1,11 @@
 defmodule PTAX.ExchangeRates do
-  @moduledoc """
-  An `ex_money` exchange rate backend backed by Brazil's Central Bank (BCB)
-  PTAX daily closing CSV feed.
-
-  Configure it as the `ex_money` API module in your application:
-
-      config :ex_money, api_module: PTAX.ExchangeRates
-
-  Once set, `ex_money` will call this module to populate its rate cache.
-  """
+  @moduledoc false
 
   @behaviour Money.ExchangeRates
 
-  @retriever Application.compile_env(:ptax, :retriever, Money.ExchangeRates.Retriever)
+  @http_client Application.compile_env(:ptax, :http_client, Money.ExchangeRates.HTTP)
 
   @impl true
-  @doc false
   def get_latest_rates(config) do
     get_nearest_historic_rates(Date.utc_today(), 0, config)
   end
@@ -31,7 +21,6 @@ defmodule PTAX.ExchangeRates do
   end
 
   @impl true
-  @doc false
   def get_historic_rates(date, config) do
     with {:error, {Money.ExchangeRateError, "404"}} <- fetch_rates(date, config) do
       {:error, {Money.ExchangeRateError, "no exchange rates available for #{date}"}}
@@ -40,12 +29,14 @@ defmodule PTAX.ExchangeRates do
 
   defp fetch_rates(date, config) do
     url = "https://www4.bcb.gov.br/Download/fechamento/#{Calendar.strftime(date, "%Y%m%d")}.csv"
-    @retriever.retrieve_rates(url, config)
+
+    with {:ok, body} when is_binary(body) <-
+           @http_client.get(url, verify_peer: config.verify_peer) do
+      {:ok, decode_rates(body)}
+    end
   end
 
-  @impl true
-  @doc false
-  def decode_rates(body) when is_binary(body) do
+  defp decode_rates(body) do
     body
     |> String.split("\n", trim: true)
     |> Enum.reduce(%{BRL: Decimal.new("1")}, fn line, acc ->

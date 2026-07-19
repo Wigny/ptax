@@ -6,26 +6,32 @@ Quotes are fetched from the BCB's [exchange rates page](https://www.bcb.gov.br/e
 
 ## Installation
 
-Add the dependency and configure `ex_money` to use PTAX as its rate source:
+Add PTAX to your project's dependencies in `mix.exs`:
 
 ```elixir
 # mix.exs
 def deps do
   [
-    {:ptax, "~> 2.0"}
+    {:ptax, "~> 2.1"}
   ]
 end
-
-# config/config.exs
-config :ex_money, api_module: PTAX.ExchangeRates
 ```
 
-In scripts and Livebook notebooks:
+PTAX starts its own isolated retriever, so `ex_money`'s default auto-started retriever isn't needed. Turn it off:
+
+```elixir
+# config/config.exs
+config :ex_money, auto_start_exchange_rate_service: false
+```
+
+See [`ex_money`'s exchange rates service docs](https://ex-money.hexdocs.pm/readme.html#the-exchange-rates-service-process-supervision-and-startup) for details.
+
+In scripts and Livebook notebooks, pass the same config to `Mix.install/2`:
 
 ```elixir
 Mix.install(
-  [{:ptax, "~> 2.0"}],
-  config: [ex_money: [api_module: PTAX.ExchangeRates]]
+  [{:ptax, "~> 2.1"}],
+  config: [ex_money: [auto_start_exchange_rate_service: false]]
 )
 ```
 
@@ -63,10 +69,22 @@ iex> PTAX.exchange!(Money.new!(:USD, "100"), :BRL, ~D[2025-12-25])
 ** (Money.ExchangeRateError) no exchange rates available for 2025-12-25
 ```
 
-## See also
+## Using PTAX rates with `ex_money`
 
-PTAX only provides the rate source. Once configured (see [Configuration](#configuration)), you can use `ex_money` directly for richer operations:
+PTAX runs as an isolated, named `ex_money` retriever (`PTAX.Retriever`), so it never interferes with any other `ex_money` retriever your application runs — you're free to use other providers for other currencies alongside it.
+
+To reach `ex_money`'s richer operations (arbitrary conversions, cross rates) with PTAX data, fetch rates from `PTAX.Retriever` and pass them to any `ex_money` function that accepts a rates map:
+
+```elixir
+rates = Money.ExchangeRates.Retriever.latest_rates(PTAX.Retriever)
+Money.to_currency(Money.new!(:USD, "100"), :BRL, rates)
+
+historic = Money.ExchangeRates.Retriever.historic_rates(PTAX.Retriever, ~D[2026-05-15])
+Money.to_currency(Money.new!(:GBP, "50"), :BRL, historic)
+```
+
+## See also
 
 - [`Money.to_currency/2,3`](https://hexdocs.pm/ex_money/Money.html#to_currency/3) — convert between any two currencies
 - [`Money.cross_rate/2`](https://hexdocs.pm/ex_money/Money.html#cross_rate/2) — derive a cross rate between two currencies
-- [`Money.ExchangeRates`](https://hexdocs.pm/ex_money/Money.ExchangeRates.html) — access and configure the exchange rate backend
+- [`Money.ExchangeRates.Retriever`](https://hexdocs.pm/ex_money/Money.ExchangeRates.Retriever.html) — the retriever process and its named-instance functions

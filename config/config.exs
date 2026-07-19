@@ -1,7 +1,7 @@
 import Config
 
-config :ex_money, api_module: PTAX.ExchangeRates
+config :ex_money, auto_start_exchange_rate_service: false
 
 if config_env() == :test do
-  config :ptax, retriever: PTAX.ExchangeRates.RetrieverMock
+  config :ptax, http_client: PTAX.ExchangeRates.HTTPClientMock
 end

@@ -6,6 +6,8 @@ defmodule PTAX do
   for each currency pair.
   """
 
+  alias Money.ExchangeRates.Retriever
+
   @doc """
   Exchanges a `Money` amount to the given currency using the latest known PTAX rates.
 
@@ -23,7 +25,9 @@ defmodule PTAX do
   @spec exchange(Money.t(), Money.currency_reference()) ::
           {:ok, Money.t()} | {:error, {Exception.t(), String.t()}}
   def exchange(%Money{} = money, currency) do
-    with {:ok, money} <- Money.to_currency(money, currency) do
+    rates = Retriever.latest_rates(PTAX.Retriever)
+
+    with {:ok, money} <- Money.to_currency(money, currency, rates) do
       {:ok, Money.round(money, currency_digits: :cash)}
     end
   end
@@ -43,8 +47,10 @@ defmodule PTAX do
   """
   @spec exchange!(Money.t(), Money.currency_reference()) :: Money.t()
   def exchange!(%Money{} = money, currency) do
+    rates = Retriever.latest_rates(PTAX.Retriever)
+
     money
-    |> Money.to_currency!(currency)
+    |> Money.to_currency!(currency, rates)
     |> Money.round(currency_digits: :cash)
   end
 
@@ -66,7 +72,7 @@ defmodule PTAX do
   @spec exchange(Money.t(), Money.currency_reference(), Date.t()) ::
           {:ok, Money.t()} | {:error, {Exception.t(), String.t()}}
   def exchange(%Money{} = money, currency, date) do
-    rates = Money.ExchangeRates.historic_rates(date)
+    rates = Retriever.historic_rates(PTAX.Retriever, date)
 
     with {:ok, money} <- Money.to_currency(money, currency, rates) do
       {:ok, Money.round(money, currency_digits: :cash)}
@@ -89,7 +95,7 @@ defmodule PTAX do
   """
   @spec exchange!(Money.t(), Money.currency_reference(), Date.t()) :: Money.t()
   def exchange!(%Money{} = money, currency, date) do
-    rates = Money.ExchangeRates.historic_rates(date)
+    rates = Retriever.historic_rates(PTAX.Retriever, date)
 
     money
     |> Money.to_currency!(currency, rates)
