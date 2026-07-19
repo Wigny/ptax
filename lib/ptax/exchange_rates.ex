@@ -50,7 +50,7 @@ defmodule PTAX.ExchangeRates do
 
           Map.put(acc, currency, Decimal.div(Decimal.new("1"), mid))
 
-        {:error, _reason} ->
+        {:error, {Money.UnknownCurrencyError, _message}} ->
           acc
       end
     end)
