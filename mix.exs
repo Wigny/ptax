@@ -24,8 +24,9 @@ defmodule PTAX.MixProject do
 
   defp deps do
     [
+      {:ex_money, github: "ex-money/money"},
       {:decimal, "~> 3.1"},
-      {:ex_money, github: "Wigny/money", branch: "cache-per-retriever"},
+      {:req, "~> 0.7"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
