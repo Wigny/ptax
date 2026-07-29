@@ -4,8 +4,8 @@ defmodule PTAX do
 
   Each conversion uses the published quote that matches its direction: the bid
   rate for the currency being sold into BRL, and the ask rate for the currency
-  being bought with BRL. A cross conversion between two non-BRL currencies sells
-  the source at its bid and buys the target at its ask.
+  being bought with BRL. A cross conversion between two non-BRL currencies goes
+  through BRL, selling the source at its bid and buying the target at its ask.
   """
 
   alias PTAX.Retriever

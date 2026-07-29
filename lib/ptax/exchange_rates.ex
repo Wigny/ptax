@@ -50,7 +50,7 @@ defmodule PTAX.ExchangeRates do
 
   defp decode_rates(body, quote_side) do
     body
-    |> String.split("\n", trim: true)
+    |> String.split(["\r\n", "\n"], trim: true)
     |> Enum.reduce(%{BRL: Decimal.new("1")}, fn line, acc ->
       [_date, _code, _type, currency, bid, ask, _par_bid, _par_ask] = String.split(line, ";")
 

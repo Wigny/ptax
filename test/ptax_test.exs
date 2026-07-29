@@ -29,4 +29,12 @@ defmodule PTAXTest do
     assert PTAX.exchange(Money.new!(:BRL, "520"), :USD, ~D[2026-06-10]) ==
              {:ok, Money.new!(:USD, "100.00")}
   end
+
+  test "exchange/3 crosses non-BRL pairs through the closing rates" do
+    # GBP is sold at its bid (6.75190) and EUR bought at its ask (5.89000).
+    # Crossing the published USD parities instead, as BCB's own converter does,
+    # would yield 114.65.
+    assert PTAX.exchange(Money.new!(:GBP, "100"), :EUR, ~D[2026-05-15]) ==
+             {:ok, Money.new!(:EUR, "114.63")}
+  end
 end

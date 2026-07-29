@@ -2,7 +2,7 @@
 
 PTAX is the official exchange rate published daily by the Brazilian Central Bank (Banco Central do Brasil, BCB). It is the reference rate used in financial contracts, tax reporting, and regulatory filings in Brazil.
 
-Quotes are fetched from the BCB's [exchange rates page](https://www.bcb.gov.br/estabilidadefinanceira/cotacoestodas) and represent the closing bid and ask rates for each currency pair against the Brazilian Real (BRL). Each conversion uses the quote that matches its direction: the bid rate for the currency being sold into BRL and the ask rate for the currency being bought with BRL. A conversion between two non-BRL currencies sells the source at its bid and buys the target at its ask.
+Quotes are fetched from the BCB's [exchange rates page](https://www.bcb.gov.br/estabilidadefinanceira/cotacoestodas) and represent the closing bid and ask rates for each currency pair against the Brazilian Real (BRL). Each conversion uses the quote that matches its direction: the bid rate for the currency being sold into BRL and the ask rate for the currency being bought with BRL. A conversion between two non-BRL currencies goes through BRL, selling the source at its bid and buying the target at its ask.
 
 ## Installation
 
@@ -68,6 +68,19 @@ iex> PTAX.exchange(Money.new!(:USD, "100"), :BRL, ~D[2025-12-25])
 iex> PTAX.exchange!(Money.new!(:USD, "100"), :BRL, ~D[2025-12-25])
 ** (Money.ExchangeRateError) no exchange rates available for 2025-12-25
 ```
+
+### Cross conversions
+
+A conversion between two non-BRL currencies goes through BRL, selling the source at its bid and buying the target at its ask:
+
+```elixir
+iex> PTAX.exchange(Money.new!(:GBP, "100"), :EUR, ~D[2026-05-15])
+{:ok, Money.new!(:EUR, "114.63")}
+```
+
+> #### Comparing against BCB's online converter {: .info}
+>
+> BCB's [converter](https://www.bcb.gov.br/conversao) routes non-BRL pairs through USD rather than BRL, and returns `114.65` for the conversion above. Expect a difference of around 0.01% on cross conversions when reconciling against it. Conversions involving BRL match it exactly.
 
 ## Using PTAX rates with `ex_money`
 
