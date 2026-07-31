@@ -12,7 +12,7 @@ Add PTAX to your project's dependencies in `mix.exs`:
 # mix.exs
 def deps do
   [
-    {:ptax, "~> 2.1"}
+    {:ptax, "~> 3.0"}
   ]
 end
 ```
@@ -30,7 +30,7 @@ In scripts and Livebook notebooks, pass the same config to `Mix.install/2`:
 
 ```elixir
 Mix.install(
-  [{:ptax, "~> 2.1"}],
+  [{:ptax, "~> 3.0"}],
   config: [ex_money: [auto_start_exchange_rate_service: false]]
 )
 ```
@@ -82,86 +82,44 @@ iex> PTAX.exchange(Money.new!(:GBP, "100"), :EUR, ~D[2026-05-15])
 >
 > BCB's [converter](https://www.bcb.gov.br/conversao) routes non-BRL pairs through USD rather than BRL, and returns `114.65` for the conversion above. Expect a difference of around 0.01% on cross conversions when reconciling against it. Conversions involving BRL match it exactly.
 
-## Using PTAX rates with `ex_money`
-
-PTAX runs two isolated, named `ex_money` retrievers — one holding the bid rates and one the ask rates — so it never interferes with any other `ex_money` retriever your application runs.
-
-To reach `ex_money`'s richer operations (arbitrary conversions, cross rates) with PTAX data, fetch a side's rates from `PTAX.Retriever` and pass them to any `ex_money` function that accepts a rates map:
-
-```elixir
-bid = PTAX.Retriever.latest_rates(:bid)
-Money.to_currency(Money.new!(:USD, "100"), :BRL, bid)
-
-ask = PTAX.Retriever.historic_rates(:ask, ~D[2026-05-15])
-Money.to_currency(Money.new!(:BRL, "50"), :USD, ask)
-```
-
 ## Testing
 
-PTAX passes `:ptax, :req_options` straight to `Req`, so a test suite can serve canned rates instead of reaching BCB. Point it at [`Req.Test`](https://req.hexdocs.pm/Req.Test.html):
+`PTAX` reads rates through the `PTAX.Rates` behaviour. Point `:ptax, :rates` at a stub implementing it and a test suite serves known rates instead of reaching BCB.
 
-```elixir
-# config/test.exs
-config :ptax, req_options: [plug: {Req.Test, PTAX}]
-```
-
-`Req.Test` runs on `plug`, which `req` treats as an optional dependency, so declare it yourself:
+Any module implementing the behaviour works. With [Mox](https://hexdocs.pm/mox):
 
 ```elixir
 # mix.exs
-{:plug, "~> 1.0", only: :test}
+{:mox, "~> 1.2", only: :test}
+
+# config/test.exs
+config :ptax, rates: MyApp.RatesMock
+
+# test/test_helper.exs
+Mox.defmock(MyApp.RatesMock, for: PTAX.Rates)
+ExUnit.start()
 ```
 
-Stub bodies follow BCB's format, one currency per line: date, code, type, currency code, bid, ask, and the two USD parities, with `,` as the decimal separator and CRLF line endings.
+Each conversion asks for both sides: the currency being sold is read from the `:bid` rates and the currency being bought from the `:ask` rates. A rates map is keyed by currency, with each value the number of units of that currency per BRL, so a USD quote of 4.00 BRL is `Decimal.new("0.25")`.
 
 ```elixir
 defmodule MyApp.ConversionTest do
-  use ExUnit.Case, async: false
-
-  setup {Req.Test, :set_req_test_to_shared}
+  use ExUnit.Case, async: true
 
   test "converts at the published bid and ask" do
-    Req.Test.stub(PTAX, fn conn ->
-      Req.Test.text(conn, "15/05/2026;220;A;USD;5,00000000;5,50000000;1,00000000;1,00000000\r\n")
+    Mox.stub(MyApp.RatesMock, :historic_rates, fn
+      # USD bid 4.00, ask 5.00
+      :bid, ~D[2026-05-15] -> {:ok, %{BRL: Decimal.new(1), USD: Decimal.new("0.25")}}
+      :ask, ~D[2026-05-15] -> {:ok, %{BRL: Decimal.new(1), USD: Decimal.new("0.2")}}
     end)
 
-    assert PTAX.exchange(Money.new!(:USD, "100"), :BRL, ~D[2026-05-15]) ==
-             {:ok, Money.new!(:BRL, "500.00")}
-
-    assert PTAX.exchange(Money.new!(:BRL, "550"), :USD, ~D[2026-05-15]) ==
-             {:ok, Money.new!(:USD, "100.00")}
-  end
-
-  test "reports a date with no data" do
-    Req.Test.stub(PTAX, fn conn -> Plug.Conn.send_resp(conn, 404, "") end)
-
-    assert PTAX.exchange(Money.new!(:USD, "100"), :BRL, ~D[2026-05-19]) ==
-             {:error, {Money.ExchangeRateError, "no exchange rates available for 2026-05-19"}}
-  end
-
-  test "surfaces a network failure" do
-    Req.Test.stub(PTAX, fn conn -> Req.Test.transport_error(conn, :timeout) end)
-
-    assert PTAX.exchange(Money.new!(:USD, "100"), :BRL, ~D[2026-05-18]) ==
-             {:error, {Money.ExchangeRateError, "timeout"}}
+    assert PTAX.exchange!(Money.new!(:USD, "100"), :BRL, ~D[2026-05-15]) == Money.new!(:BRL, "400.00")
+    assert PTAX.exchange!(Money.new!(:BRL, "400"), :USD, ~D[2026-05-15]) == Money.new!(:USD, "80.00")
   end
 end
 ```
-
-The shared `setup` and `async: false` are both required: PTAX's retrievers are long-lived processes of its own supervision tree, so a stub owned by the test process is invisible to them.
-
-> #### Allowances are not a way around `async: false` {: .warning}
->
-> `Req.Test.allow/3` grants one named process access to one test's stub, so it does not help here: every test shares the same two retriever processes, and concurrent tests displace each other's allowances. Some then fail with `cannot find mock/stub`, while others silently convert at another test's rates. Tests still pass whenever they happen not to overlap, which makes this easy to miss.
-
-> #### Each date is fetched once {: .info}
->
-> Rates are cached per date for the lifetime of the run, so changing what the stub serves for a date already converted has no effect. Give each test its own date instead.
-
-To keep tests `async: true` and avoid the `plug` dependency, set `adapter:` instead of `plug:` to a module whose `run/1` returns `{request, %Req.Response{}}`. Fixtures then live in that one module rather than in each test.
 
 ## See also
 
 - [`Money.to_currency/2,3`](https://hexdocs.pm/ex_money/Money.html#to_currency/3) — convert between any two currencies
 - [`Money.cross_rate/2`](https://hexdocs.pm/ex_money/Money.html#cross_rate/2) — derive a cross rate between two currencies
-- [`Money.ExchangeRates.Retriever`](https://hexdocs.pm/ex_money/Money.ExchangeRates.Retriever.html) — the retriever process and its named-instance functions

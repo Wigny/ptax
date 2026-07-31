@@ -2,19 +2,17 @@ defmodule PTAX do
   @moduledoc """
   Converts between currencies using the Brazilian Central Bank's PTAX rates.
 
-  Each conversion uses the published quote that matches its direction: the bid
-  rate for the currency being sold into BRL, and the ask rate for the currency
-  being bought with BRL. A cross conversion between two non-BRL currencies goes
-  through BRL, selling the source at its bid and buying the target at its ask.
+  Each conversion uses the published quote that matches its direction: the bid rate for the
+  currency being sold into BRL, and the ask rate for the currency being bought with BRL. A cross
+  conversion between two non-BRL currencies goes through BRL, selling the source at its bid and
+  buying the target at its ask.
   """
-
-  alias PTAX.Retriever
 
   @doc """
   Exchanges a `Money` amount to the given currency using the latest known PTAX rates.
 
-  Returns `{:ok, Money.t()}` on success, or `{:error, reason}` if the rates
-  are unavailable or the currency is not supported.
+  Returns `{:ok, Money.t()}` on success, or `{:error, reason}` if the rates are unavailable or the
+  currency is not supported.
 
   ## Examples
 
@@ -58,8 +56,8 @@ defmodule PTAX do
   @doc """
   Exchanges a `Money` amount to the given currency using PTAX rates for the given date.
 
-  Returns `{:ok, Money.t()}` on success, or `{:error, reason}` if the rates
-  are unavailable or the currency is not supported.
+  Returns `{:ok, Money.t()}` on success, or `{:error, reason}` if the rates are unavailable or the
+  currency is not supported.
 
   ## Examples
 
@@ -103,16 +101,18 @@ defmodule PTAX do
   end
 
   defp latest_rates(from, to) do
-    with {:ok, bid} <- Retriever.latest_rates(:bid),
-         {:ok, ask} <- Retriever.latest_rates(:ask) do
-      {:ok, %{from => Map.get(bid, from), to => Map.get(ask, to)}}
+    with {:ok, bid} <- rates().latest_rates(:bid),
+         {:ok, ask} <- rates().latest_rates(:ask) do
+      {:ok, %{from => bid[from], to => ask[to]}}
     end
   end
 
   defp historic_rates(from, to, date) do
-    with {:ok, bid} <- Retriever.historic_rates(:bid, date),
-         {:ok, ask} <- Retriever.historic_rates(:ask, date) do
-      {:ok, %{from => Map.get(bid, from), to => Map.get(ask, to)}}
+    with {:ok, bid} <- rates().historic_rates(:bid, date),
+         {:ok, ask} <- rates().historic_rates(:ask, date) do
+      {:ok, %{from => bid[from], to => ask[to]}}
     end
   end
+
+  defp rates, do: Application.get_env(:ptax, :rates, PTAX.Retriever)
 end
