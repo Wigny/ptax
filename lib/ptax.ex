@@ -103,14 +103,14 @@ defmodule PTAX do
   defp latest_rates(from, to) do
     with {:ok, bid} <- rates().latest_rates(:bid),
          {:ok, ask} <- rates().latest_rates(:ask) do
-      {:ok, %{from => bid[from], to => ask[to]}}
+      {:ok, Map.merge(Map.take(bid, [from]), Map.take(ask, [to]))}
     end
   end
 
   defp historic_rates(from, to, date) do
     with {:ok, bid} <- rates().historic_rates(:bid, date),
          {:ok, ask} <- rates().historic_rates(:ask, date) do
-      {:ok, %{from => bid[from], to => ask[to]}}
+      {:ok, Map.merge(Map.take(bid, [from]), Map.take(ask, [to]))}
     end
   end
 

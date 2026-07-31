@@ -30,6 +30,12 @@ defmodule PTAXTest do
              {:ok, Money.new!(:USD, "100.00")}
   end
 
+  test "exchange/3 returns an error for a currency PTAX does not quote" do
+    assert PTAX.exchange(Money.new!(:USD, "100"), :ZWL, ~D[2026-06-10]) ==
+             {:error,
+              {Money.ExchangeRateError, "No exchange rate is available for currency :ZWL"}}
+  end
+
   test "exchange/3 crosses non-BRL pairs through the closing rates" do
     # GBP is sold at its bid (6.75190) and EUR bought at its ask (5.89000).
     # Crossing the published USD parities instead, as BCB's own converter does,
