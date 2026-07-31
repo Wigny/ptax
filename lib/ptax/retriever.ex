@@ -10,7 +10,8 @@ defmodule PTAX.Retriever do
     config = %{
       Money.ExchangeRates.default_config()
       | api_module: PTAX.ExchangeRates,
-        retriever_options: %{quote_side: quote_side}
+        retriever_options: %{quote_side: quote_side},
+        retrieve_every: to_timeout(hour: 1)
     }
 
     Supervisor.child_spec({Retriever, name: name(quote_side), config: config}, id: quote_side)
