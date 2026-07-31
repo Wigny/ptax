@@ -24,7 +24,7 @@ defmodule PTAX.MixProject do
 
   defp deps do
     [
-      {:ex_money, github: "ex-money/money"},
+      {:ex_money, "~> 6.2"},
       {:decimal, "~> 3.1"},
       {:req, "~> 0.7"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
