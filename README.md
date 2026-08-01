@@ -1,12 +1,12 @@
 # PTAX
 
-PTAX is the official exchange rate published daily by the Brazilian Central Bank (Banco Central do Brasil, BCB). It is the reference rate used in financial contracts, tax reporting, and regulatory filings in Brazil.
+PTAX is the official exchange rate published daily by the Brazilian Central Bank (Banco Central do Brasil, BCB). It is the reference rate used in financial contracts, tax reporting, and regulatory filings in Brazil. On every business day BCB publishes a bulletin on its [exchange rates page](https://www.bcb.gov.br/estabilidadefinanceira/cotacoestodas), listing, per currency, a bid and an ask against BRL and against USD.
 
-Quotes are fetched from the BCB's [exchange rates page](https://www.bcb.gov.br/estabilidadefinanceira/cotacoestodas) and represent the closing bid and ask rates for each currency pair against the Brazilian Real (BRL). Each conversion uses the quote that matches its direction: the bid rate for the currency being sold into BRL and the ask rate for the currency being bought with BRL. A conversion between two non-BRL currencies goes through BRL, selling the source at its bid and buying the target at its ask.
+`:ptax` is an Elixir library that converts `Money` amounts using those bulletins. Results match BCB's [online converter](https://www.bcb.gov.br/conversao).
 
 ## Installation
 
-Add PTAX to your project's dependencies in `mix.exs`:
+Add `:ptax` to your project's dependencies in `mix.exs`:
 
 ```elixir
 # mix.exs
@@ -17,74 +17,56 @@ def deps do
 end
 ```
 
-PTAX starts its own isolated retriever, so `ex_money`'s default auto-started retriever isn't needed. Turn it off:
-
-```elixir
-# config/config.exs
-config :ex_money, auto_start_exchange_rate_service: false
-```
-
-See [`ex_money`'s exchange rates service docs](https://ex-money.hexdocs.pm/readme.html#the-exchange-rates-service-process-supervision-and-startup) for details.
-
-In scripts and Livebook notebooks, pass the same config to `Mix.install/2`:
-
-```elixir
-Mix.install(
-  [{:ptax, "~> 3.0"}],
-  config: [ex_money: [auto_start_exchange_rate_service: false]]
-)
-```
-
 ## Usage
 
-### Convert using the latest known rates
+Converted amounts are rounded to 7 decimal places. The rate itself is never rounded, so scaling the amount scales the result exactly.
+
+### Convert using the latest published quotes
 
 ```elixir
-iex> PTAX.exchange(Money.new!(:USD, "100"), :BRL)
+iex> PTAX.exchange(Money.new(:USD, "100"), :BRL)
 {:ok, %Money{}}
 
-iex> PTAX.exchange!(Money.new!(:USD, "100"), :BRL)
+iex> PTAX.exchange!(Money.new(:USD, "100"), :BRL)
 %Money{}
 ```
 
-The lookup automatically walks back up to 7 days to find the most recent available data.
+BCB publishes a bulletin only on business days, so the lookup walks back up to 7 days to find the most recent one.
 
-### Convert using rates for a specific date
-
-```elixir
-iex> PTAX.exchange(Money.new!(:GBP, "50"), :BRL, ~D[2026-05-15])
-{:ok, Money.new!(:BRL, "337.60")}
-
-iex> PTAX.exchange!(Money.new!(:GBP, "50"), :BRL, ~D[2026-05-15])
-Money.new!(:BRL, "337.60")
-```
-
-Dates with no BCB data (weekends, holidays) return `{:error, reason}` or raise with the bang variants:
+### Convert using the quotes for a specific date
 
 ```elixir
-iex> PTAX.exchange(Money.new!(:USD, "100"), :BRL, ~D[2025-12-25])
-{:error, {Money.ExchangeRateError, "no exchange rates available for 2025-12-25"}}
+iex> PTAX.exchange(Money.new(:GBP, "50"), :BRL, ~D[2026-07-31])
+{:ok, Money.new(:BRL, "341.8150000")}
 
-iex> PTAX.exchange!(Money.new!(:USD, "100"), :BRL, ~D[2025-12-25])
-** (Money.ExchangeRateError) no exchange rates available for 2025-12-25
+iex> PTAX.exchange!(Money.new(:GBP, "50"), :BRL, ~D[2026-07-31])
+Money.new(:BRL, "341.8150000")
 ```
 
-### Cross conversions
-
-A conversion between two non-BRL currencies goes through BRL, selling the source at its bid and buying the target at its ask:
+Dates with no bulletin (weekends, holidays) return an error, or raise with the bang variants:
 
 ```elixir
-iex> PTAX.exchange(Money.new!(:GBP, "100"), :EUR, ~D[2026-05-15])
-{:ok, Money.new!(:EUR, "114.63")}
+iex> PTAX.exchange(Money.new(:USD, "100"), :BRL, ~D[2025-12-25])
+{:error, %PTAX.QuotesNotFoundError{date: ~D[2025-12-25]}}
+
+iex> PTAX.exchange!(Money.new(:USD, "100"), :BRL, ~D[2025-12-25])
+** (PTAX.QuotesNotFoundError) no quotes published for 2025-12-25
 ```
 
-> #### Comparing against BCB's online converter {: .info}
+Currencies BCB does not quote return a `Money.ExchangeRateError`:
+
+```elixir
+iex> PTAX.exchange(Money.new(:USD, "100"), :ZWL, ~D[2026-07-31])
+{:error, %Money.ExchangeRateError{message: "No exchange rate is available for currency :ZWL"}}
+```
+
+> #### Always convert in a single call {: .warning}
 >
-> BCB's [converter](https://www.bcb.gov.br/conversao) routes non-BRL pairs through USD rather than BRL, and returns `114.65` for the conversion above. Expect a difference of around 0.01% on cross conversions when reconciling against it. Conversions involving BRL match it exactly.
+> BCB treats a conversion between two currencies other than BRL and USD as its own operation, not as a conversion into USD followed by one out of it. Routing an amount through an intermediate currency yourself does not reproduce the published result, and the difference reaches several percent on currencies with a wide spread.
 
 ## Testing
 
-`PTAX` reads rates through the `PTAX.Rates` behaviour. Point `:ptax, :rates` at a stub implementing it and a test suite serves known rates instead of reaching BCB.
+`PTAX` reads quotes through the `PTAX.Rates` behaviour. Point `:ptax, :rates` at a stub implementing it and a test suite serves known rates instead of reaching BCB.
 
 Any module implementing the behaviour works. With [Mox](https://hexdocs.pm/mox):
 
@@ -100,21 +82,20 @@ Mox.defmock(MyApp.RatesMock, for: PTAX.Rates)
 ExUnit.start()
 ```
 
-Each conversion asks for both sides: the currency being sold is read from the `:bid` rates and the currency being bought from the `:ask` rates. A rates map is keyed by currency, with each value the number of units of that currency per BRL, so a USD quote of 4.00 BRL is `Decimal.new("0.25")`.
+The callback receives the currency being converted from and returns rates relative to it: each value is how many units of that currency one unit of the base currency buys, and the base currency itself maps to `1`. A map built for one base currency cannot be reused for another, because the two directions of a pair read opposite sides of the spread and are not reciprocal.
 
 ```elixir
 defmodule MyApp.ConversionTest do
   use ExUnit.Case, async: true
 
-  test "converts at the published bid and ask" do
-    Mox.stub(MyApp.RatesMock, :historic_rates, fn
-      # USD bid 4.00, ask 5.00
-      :bid, ~D[2026-05-15] -> {:ok, %{BRL: Decimal.new(1), USD: Decimal.new("0.25")}}
-      :ask, ~D[2026-05-15] -> {:ok, %{BRL: Decimal.new(1), USD: Decimal.new("0.2")}}
+  test "converts at the published rate" do
+    Mox.stub(MyApp.RatesMock, :rates, fn
+      :USD, ~D[2026-07-31] -> {:ok, %{USD: Decimal.new(1), BRL: Decimal.new("5.4321")}}
+      :BRL, ~D[2026-07-31] -> {:ok, %{BRL: Decimal.new(1), USD: Decimal.new("0.1834")}}
     end)
 
-    assert PTAX.exchange!(Money.new!(:USD, "100"), :BRL, ~D[2026-05-15]) == Money.new!(:BRL, "400.00")
-    assert PTAX.exchange!(Money.new!(:BRL, "400"), :USD, ~D[2026-05-15]) == Money.new!(:USD, "80.00")
+    assert PTAX.exchange!(Money.new(:USD, "100"), :BRL, ~D[2026-07-31]) == Money.new(:BRL, "543.2100000")
+    assert PTAX.exchange!(Money.new(:BRL, "100"), :USD, ~D[2026-07-31]) == Money.new(:USD, "18.3400000")
   end
 end
 ```

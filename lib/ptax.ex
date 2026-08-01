@@ -1,41 +1,50 @@
 defmodule PTAX do
   @moduledoc """
-  Converts between currencies using the Brazilian Central Bank's PTAX rates.
+  Converts between currencies using the Brazilian Central Bank's PTAX quotes.
 
-  Each conversion uses the published quote that matches its direction: the bid rate for the
-  currency being sold into BRL, and the ask rate for the currency being bought with BRL. A cross
-  conversion between two non-BRL currencies goes through BRL, selling the source at its bid and
-  buying the target at its ask.
+  For each business day BCB publishes, per currency, a bid and an ask against BRL and against
+  USD. A conversion always takes the side of the spread that matches its direction, and which
+  pair of quotes it reads depends on the currencies involved: conversions with BRL on one side
+  use the BRL quotes, conversions with USD on one side use the USD quotes, and conversions
+  between two other currencies combine both currencies' USD quotes.
+
+  That last case is BCB's own rule rather than two conversions through USD, so its result
+  differs from converting via USD in two steps.
   """
 
   @doc """
-  Exchanges a `Money` amount to the given currency using the latest known PTAX rates.
+  Exchanges a `Money` amount to the given currency using the latest published PTAX quotes.
 
-  Returns `{:ok, Money.t()}` on success, or `{:error, reason}` if the rates are unavailable or the
-  currency is not supported.
+  BCB publishes a bulletin only on business days, so the most recent one within the last 7 days
+  is used. Returns `{:error, exception}` if none was published in that window, or if the currency
+  is not supported.
 
   ## Examples
 
       iex> {:ok, %Money{}} = PTAX.exchange(Money.new(:USD, "100"), :BRL)
 
       iex> PTAX.exchange(Money.new(:BRL, "100"), :XYZ)
-      {:error, {Money.UnknownCurrencyError, "The currency :XYZ is not known."}}
+      {:error, %Money.UnknownCurrencyError{message: "The currency :XYZ is not known."}}
 
   """
   @spec exchange(Money.t(), Money.currency_reference()) ::
-          {:ok, Money.t()} | {:error, {Exception.t(), String.t()}}
+          {:ok, Money.t()} | {:error, Exception.t()}
   def exchange(%Money{} = money, to_currency) do
-    with {:ok, to_currency} <- Money.validate_currency(to_currency),
-         {:ok, rates} <- latest_rates(money.currency, to_currency),
-         {:ok, money} <- Money.to_currency(money, to_currency, rates) do
-      {:ok, Money.round(money, currency_digits: :cash)}
-    end
+    today = Date.utc_today()
+
+    Enum.find_value(
+      Date.range(today, Date.add(today, -6), -1),
+      {:error, %PTAX.LatestQuotesNotFoundError{}},
+      fn date ->
+        with {:error, %PTAX.QuotesNotFoundError{}} <- exchange(money, to_currency, date), do: nil
+      end
+    )
   end
 
   @doc """
-  Exchanges a `Money` amount to the given currency using the latest known PTAX rates.
+  Exchanges a `Money` amount to the given currency using the latest published PTAX quotes.
 
-  Raises if the rates are unavailable or the currency is not supported.
+  Raises if no bulletin was published in the last 7 days, or if the currency is not supported.
 
   ## Examples
 
@@ -49,70 +58,58 @@ defmodule PTAX do
   def exchange!(%Money{} = money, to_currency) do
     case exchange(money, to_currency) do
       {:ok, money} -> money
-      {:error, {exception, reason}} -> raise exception, reason
+      {:error, exception} -> raise exception
     end
   end
 
   @doc """
-  Exchanges a `Money` amount to the given currency using PTAX rates for the given date.
+  Exchanges a `Money` amount to the given currency using the PTAX quotes for the given date.
 
-  Returns `{:ok, Money.t()}` on success, or `{:error, reason}` if the rates are unavailable or the
-  currency is not supported.
+  Returns `{:ok, Money.t()}` on success, or `{:error, exception}` if the currency is not
+  supported.
 
   ## Examples
 
-      iex> PTAX.exchange(Money.new(:GBP, "50"), :BRL, ~D[2026-05-15])
-      {:ok, Money.new(:BRL, "337.60")}
+      iex> PTAX.exchange(Money.new(:GBP, "50"), :BRL, ~D[2026-07-31])
+      {:ok, Money.new(:BRL, "341.8150000")}
 
-      iex> PTAX.exchange(Money.new(:USD, "100"), :BRL, ~D[2025-12-25])
-      {:error, {Money.ExchangeRateError, "no exchange rates available for 2025-12-25"}}
+      iex> PTAX.exchange(Money.new(:BRL, "100"), :ZWL, ~D[2026-07-31])
+      {:error, %Money.ExchangeRateError{message: "No exchange rate is available for currency :ZWL"}}
 
   """
   @spec exchange(Money.t(), Money.currency_reference(), Date.t()) ::
-          {:ok, Money.t()} | {:error, {Exception.t(), String.t()}}
-  def exchange(%Money{} = money, to_currency, date) do
-    with {:ok, to_currency} <- Money.validate_currency(to_currency),
-         {:ok, rates} <- historic_rates(money.currency, to_currency, date),
+          {:ok, Money.t()} | {:error, Exception.t()}
+  def exchange(%Money{} = money, to_currency, %Date{} = date) do
+    rates_module = Application.get_env(:ptax, :rates, PTAX.Rates)
+
+    with {:ok, rates} <- rates_module.rates(money.currency, date),
          {:ok, money} <- Money.to_currency(money, to_currency, rates) do
-      {:ok, Money.round(money, currency_digits: :cash)}
+      {:ok, Money.round(money, currency_digits: 7)}
+    else
+      {:error, {module, reason}} -> {:error, module.exception(reason)}
+      {:error, exception} -> {:error, exception}
     end
   end
 
   @doc """
-  Exchanges a `Money` amount to the given currency using PTAX rates for the given date.
+  Exchanges a `Money` amount to the given currency using the PTAX quotes for the given date.
 
-  Raises if the rates are unavailable or the currency is not supported.
+  Raises if the currency is not supported.
 
   ## Examples
 
-      iex> PTAX.exchange!(Money.new(:GBP, "50"), :BRL, ~D[2026-05-15])
-      Money.new(:BRL, "337.60")
+      iex> PTAX.exchange!(Money.new(:GBP, "50"), :BRL, ~D[2026-07-31])
+      Money.new(:BRL, "341.8150000")
 
-      iex> PTAX.exchange!(Money.new(:USD, "100"), :BRL, ~D[2025-12-25])
-      ** (Money.ExchangeRateError) no exchange rates available for 2025-12-25
+      iex> PTAX.exchange!(Money.new(:BRL, "100"), :ZWL, ~D[2026-07-31])
+      ** (Money.ExchangeRateError) No exchange rate is available for currency :ZWL
 
   """
   @spec exchange!(Money.t(), Money.currency_reference(), Date.t()) :: Money.t()
-  def exchange!(%Money{} = money, to_currency, date) do
+  def exchange!(%Money{} = money, to_currency, %Date{} = date) do
     case exchange(money, to_currency, date) do
       {:ok, money} -> money
-      {:error, {exception, reason}} -> raise exception, reason
+      {:error, exception} -> raise exception
     end
   end
-
-  defp latest_rates(from, to) do
-    with {:ok, bid} <- rates().latest_rates(:bid),
-         {:ok, ask} <- rates().latest_rates(:ask) do
-      {:ok, Map.merge(Map.take(bid, [from]), Map.take(ask, [to]))}
-    end
-  end
-
-  defp historic_rates(from, to, date) do
-    with {:ok, bid} <- rates().historic_rates(:bid, date),
-         {:ok, ask} <- rates().historic_rates(:ask, date) do
-      {:ok, Map.merge(Map.take(bid, [from]), Map.take(ask, [to]))}
-    end
-  end
-
-  defp rates, do: Application.get_env(:ptax, :rates, PTAX.Retriever)
 end

@@ -15,10 +15,6 @@ defmodule PTAX.MixProject do
     ]
   end
 
-  def application do
-    [mod: {PTAX.Application, []}]
-  end
-
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_env), do: ["lib"]
 
@@ -27,6 +23,7 @@ defmodule PTAX.MixProject do
       {:ex_money, "~> 6.2"},
       {:decimal, "~> 3.1"},
       {:req, "~> 0.7"},
+      {:plug, "~> 1.20", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
