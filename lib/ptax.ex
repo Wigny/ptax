@@ -32,13 +32,12 @@ defmodule PTAX do
   def exchange(%Money{} = money, to_currency) do
     today = Date.utc_today()
 
-    Enum.find_value(
-      Date.range(today, Date.add(today, -6), -1),
-      {:error, %PTAX.LatestQuotesNotFoundError{}},
-      fn date ->
-        with {:error, %PTAX.QuotesNotFoundError{}} <- exchange(money, to_currency, date), do: nil
-      end
-    )
+    today
+    |> Date.range(Date.add(today, -6), -1)
+    |> Enum.reject(&(Date.day_of_week(&1) in [6, 7]))
+    |> Enum.find_value({:error, %PTAX.LatestQuotesNotFoundError{}}, fn date ->
+      with {:error, %PTAX.QuotesNotFoundError{}} <- exchange(money, to_currency, date), do: nil
+    end)
   end
 
   @doc """
