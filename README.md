@@ -66,12 +66,7 @@ iex> PTAX.exchange(Money.new!(:USD, "100"), :ZWL, ~D[2026-07-31])
 
 ## Caching
 
-Bulletins are cached on disk, in the user cache directory by default. Set `:cache_dir` to store them elsewhere, or to `nil` to download the bulletin on every conversion:
-
-```elixir
-# config/config.exs
-config :ptax, req_options: [cache_dir: "/var/cache/ptax"]
-```
+Once BCB publishes a bulletin it never changes, so each one is downloaded once and cached on disk. A bulletin that cannot be written or read is fetched from BCB instead.
 
 ## Testing
 

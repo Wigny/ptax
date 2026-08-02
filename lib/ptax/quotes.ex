@@ -19,8 +19,10 @@ defmodule PTAX.Quotes do
     Req.new()
     |> Req.Request.register_options([:cache_dir])
     |> Req.Request.append_request_steps(read_from_cache: &read_from_cache/1)
-    |> Req.Request.prepend_response_steps(save_to_cache: &save_to_cache/1)
-    |> Req.Request.append_response_steps(decode_body: &decode_body/1)
+    |> Req.Request.append_response_steps(
+      save_to_cache: &save_to_cache/1,
+      decode_quotes: &decode_quotes/1
+    )
     |> Req.get([url: url, cache_dir: cache_dir] ++ req_options)
     |> handle_response(date)
   end
@@ -48,7 +50,7 @@ defmodule PTAX.Quotes do
   defp read_from_cache(request) do
     case File.read(filepath(request)) do
       {:ok, content} -> {request, Req.Response.new(status: 200, body: content)}
-      {:error, :enoent} -> request
+      {:error, _reason} -> request
     end
   end
 
@@ -56,14 +58,26 @@ defmodule PTAX.Quotes do
     result
   end
 
-  defp save_to_cache({request, response}) do
-    path = filepath(request)
-
-    if response.status == 200 and not File.exists?(path) do
-      with :ok <- File.mkdir_p(request.options.cache_dir), do: File.write(path, response.body)
-    end
+  defp save_to_cache({request, %{status: 200} = response}) do
+    write_atomically(filepath(request), response.body)
 
     {request, response}
+  end
+
+  defp save_to_cache(result) do
+    result
+  end
+
+  defp write_atomically(path, content) do
+    tmp_path = "#{path}.#{System.unique_integer([:positive])}"
+
+    with :ok <- File.mkdir_p(Path.dirname(path)),
+         :ok <- File.write(tmp_path, content),
+         :ok <- File.rename(tmp_path, path) do
+      :ok
+    else
+      _error -> File.rm(tmp_path)
+    end
   end
 
   @brl_quotation %{
@@ -74,7 +88,7 @@ defmodule PTAX.Quotes do
     ask_parity: nil
   }
 
-  defp decode_body({request, %{status: 200, body: body} = response}) do
+  defp decode_quotes({request, %{status: 200, body: body} = response}) do
     body =
       body
       |> String.split(["\r\n", "\n"], trim: true)
@@ -83,7 +97,7 @@ defmodule PTAX.Quotes do
     {request, %{response | body: body}}
   end
 
-  defp decode_body({request, response}) do
+  defp decode_quotes({request, response}) do
     {request, response}
   end
 

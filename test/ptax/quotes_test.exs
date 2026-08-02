@@ -95,7 +95,17 @@ defmodule PTAX.QuotesTest do
       refute File.exists?(Path.join(tmp_dir, "20260731.csv"))
     end
 
-    test "leaves an already cached file untouched", %{tmp_dir: tmp_dir} do
+    test "fetches the bulletin when the cached file cannot be read", %{tmp_dir: tmp_dir} do
+      path = Path.join(tmp_dir, "20260731.csv")
+
+      File.write!(path, "31/07/2026;220;A;USD;9,99000000;9,99000000;1,00000000;1,00000000")
+      File.chmod!(path, 0o000)
+
+      assert {:ok, quotes} = Quotes.fetch(~D[2026-07-31])
+      assert quotes[:USD].bid == Decimal.new("5.07670000")
+    end
+
+    test "serves a read-only cached file", %{tmp_dir: tmp_dir} do
       path = Path.join(tmp_dir, "20260730.csv")
 
       File.write!(path, "30/07/2026;220;A;USD;5,00000000;5,10000000;1,00000000;1,00000000")
