@@ -1,12 +1,13 @@
 defmodule PTAX.MixProject do
   use Mix.Project
 
+  @version "3.0.0"
   @source_url "https://github.com/wigny/ptax"
 
   def project do
     [
       app: :ptax,
-      version: "3.0.0",
+      version: @version,
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -45,6 +46,7 @@ defmodule PTAX.MixProject do
   defp docs do
     [
       main: "readme",
+      source_ref: @version,
       extras: ["README.md"]
     ]
   end
