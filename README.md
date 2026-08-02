@@ -1,8 +1,8 @@
 # PTAX
 
-PTAX is the official exchange rate published daily by the Brazilian Central Bank (Banco Central do Brasil, BCB). It is the reference rate used in financial contracts, tax reporting, and regulatory filings in Brazil. On every business day BCB publishes a bulletin on its [exchange rates page](https://www.bcb.gov.br/estabilidadefinanceira/cotacoestodas), listing, per currency, a bid and an ask against BRL and against USD.
+An Elixir library for currency conversion at Brazil's official exchange rate. `:ptax` converts `Money` amounts between any two currencies quoted by the Brazilian Central Bank (Banco Central do Brasil, BCB), for the latest business day or for any past date, matching BCB's own [online converter](https://www.bcb.gov.br/conversao).
 
-`:ptax` is an Elixir library that converts `Money` amounts using those bulletins. Results match BCB's [online converter](https://www.bcb.gov.br/conversao).
+The library takes its name from those rates. PTAX is the reference rate used in financial contracts, tax reporting, and regulatory filings in Brazil: on every business day BCB publishes a bulletin on its [exchange rates page](https://www.bcb.gov.br/estabilidadefinanceira/cotacoestodas), listing, per currency, a bid and an ask against BRL and against USD.
 
 ## Installation
 
@@ -63,8 +63,6 @@ iex> PTAX.exchange(Money.new!(:USD, "100"), :ZWL, ~D[2026-07-31])
 > #### Always convert in a single call {: .warning}
 >
 > BCB treats a conversion between two currencies other than BRL and USD as its own operation, not as a conversion into USD followed by one out of it. Routing an amount through an intermediate currency yourself does not reproduce the published result, and the difference reaches several percent on currencies with a wide spread.
-
-## Caching
 
 Once BCB publishes a bulletin it never changes, so each one is downloaded once and cached on disk. A bulletin that cannot be written or read is fetched from BCB instead.
 

@@ -1,17 +1,20 @@
 defmodule PTAX.Rates do
   @moduledoc """
-  The rate BCB's bulletin for a date implies for a pair of currencies, as a `Decimal`.
+  The source of the rates `PTAX` converts with.
 
-  The rate is directional: it is how many units of the target currency one unit of the source
-  currency buys. The opposite direction is not its reciprocal, because PTAX publishes a separate
-  bid and ask for every currency, and each direction reads the side matching it.
+  Every conversion reads its rate through this behaviour, resolved for the pair from the
+  bulletin BCB published for the date.
+
+  Each direction reads the side of the spread matching it, because BCB publishes a separate bid
+  and ask for every currency.
   """
 
   @doc """
-  Returns the rate converting `from_currency` into `to_currency` on `date`.
+  Returns the rate converting `from_currency` into `to_currency` on `date`, or
+  `{:error, exception}` if no rate is available for the pair.
 
-  Returns `{:error, exception}` if BCB published no bulletin for the date, or if the bulletin
-  does not quote both currencies.
+  The rate is how many units of `to_currency` one unit of `from_currency` buys, and the rate for
+  the opposite direction is not its reciprocal.
   """
   @callback rate(
               from_currency :: Localize.Currency.currency_code(),
