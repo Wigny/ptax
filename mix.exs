@@ -1,6 +1,8 @@
 defmodule PTAX.MixProject do
   use Mix.Project
 
+  @source_url "https://github.com/wigny/ptax"
+
   def project do
     [
       app: :ptax,
@@ -8,6 +10,7 @@ defmodule PTAX.MixProject do
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
+      source_url: @source_url,
       description: description(),
       package: package(),
       docs: docs(),
@@ -35,7 +38,7 @@ defmodule PTAX.MixProject do
   defp package do
     [
       licenses: ["Apache-2.0"],
-      links: %{"GitHub" => "https://github.com/wigny/ptax"}
+      links: %{"GitHub" => @source_url}
     ]
   end
 
