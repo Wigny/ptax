@@ -74,21 +74,27 @@ defmodule PTAX do
       {:ok, Money.new(:BRL, "341.8150000")}
 
       iex> PTAX.exchange(Money.new!(:BRL, "100"), :ZWL, ~D[2026-07-31])
-      {:error, %Money.ExchangeRateError{message: "No exchange rate is available for currency :ZWL"}}
+      {:error, %PTAX.CurrencyNotQuotedError{currency: :ZWL}}
 
   """
   @spec exchange(Money.t(), Money.currency_reference(), Date.t()) ::
           {:ok, Money.t()} | {:error, Exception.t()}
   def exchange(%Money{} = money, to_currency, %Date{} = date) do
-    rates_module = Application.get_env(:ptax, :rates, PTAX.Rates)
-
-    with {:ok, rates} <- rates_module.rates(money.currency, date),
+    with {:ok, to_currency} <- Money.validate_currency(to_currency),
+         {:ok, rates} <- rates(money.currency, to_currency, date),
          {:ok, money} <- Money.to_currency(money, to_currency, rates) do
       {:ok, Money.round(money, currency_digits: 7)}
     else
       {:error, {module, reason}} -> {:error, module.exception(reason)}
       {:error, exception} -> {:error, exception}
     end
+  end
+
+  defp rates(from_currency, to_currency, date) do
+    rates_module = Application.get_env(:ptax, :rates, PTAX.Rates)
+
+    with {:ok, rate} <- rates_module.rate(from_currency, to_currency, date),
+         do: {:ok, %{from_currency => Decimal.new(1), to_currency => rate}}
   end
 
   @doc """
@@ -102,7 +108,7 @@ defmodule PTAX do
       Money.new(:BRL, "341.8150000")
 
       iex> PTAX.exchange!(Money.new!(:BRL, "100"), :ZWL, ~D[2026-07-31])
-      ** (Money.ExchangeRateError) No exchange rate is available for currency :ZWL
+      ** (PTAX.CurrencyNotQuotedError) PTAX does not quote :ZWL
 
   """
   @spec exchange!(Money.t(), Money.currency_reference(), Date.t()) :: Money.t()

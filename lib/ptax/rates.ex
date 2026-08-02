@@ -1,30 +1,39 @@
 defmodule PTAX.Rates do
   @moduledoc """
-  The rates BCB's bulletin for a date implies, in the shape `ex_money` takes them.
+  The rate BCB's bulletin for a date implies for a pair of currencies, as a `Decimal`.
 
-  The rates are relative to the base currency: each value is how many units of that currency one
-  unit of the base currency buys, and the base currency itself maps to `1`. A map built for one
-  base currency cannot be reused for another, because PTAX publishes a separate bid and ask for
-  every currency and the two directions of a pair are not reciprocal.
+  The rate is directional: it is how many units of the target currency one unit of the source
+  currency buys. The opposite direction is not its reciprocal, because PTAX publishes a separate
+  bid and ask for every currency, and each direction reads the side matching it.
   """
 
-  @doc "Returns the PTAX rates on `date`, relative to `base_currency`."
-  @callback rates(Localize.Currency.currency_code(), Date.t()) ::
-              {:ok, Money.ExchangeRates.t()} | {:error, Exception.t()}
+  @doc """
+  Returns the rate converting `from_currency` into `to_currency` on `date`.
+
+  Returns `{:error, exception}` if BCB published no bulletin for the date, or if the bulletin
+  does not quote both currencies.
+  """
+  @callback rate(
+              from_currency :: Localize.Currency.currency_code(),
+              to_currency :: Localize.Currency.currency_code(),
+              date :: Date.t()
+            ) :: {:ok, Decimal.t()} | {:error, Exception.t()}
 
   @behaviour __MODULE__
 
   @impl true
-  def rates(base_currency, date) do
-    with {:ok, quotes} <- PTAX.Quotes.fetch(date) do
-      rates =
-        for {currency, quotation} <- quotes,
-            base_quotation = quotes[base_currency],
-            rate = rate({base_currency, base_quotation}, {currency, quotation}),
-            into: %{},
-            do: {currency, rate}
+  def rate(from_currency, to_currency, date) do
+    with {:ok, quotes} <- PTAX.Quotes.fetch(date),
+         {:ok, from_quotation} <- fetch_quotation(quotes, from_currency),
+         {:ok, to_quotation} <- fetch_quotation(quotes, to_currency) do
+      {:ok, rate({from_currency, from_quotation}, {to_currency, to_quotation})}
+    end
+  end
 
-      {:ok, rates}
+  defp fetch_quotation(quotes, currency) do
+    case quotes do
+      %{^currency => quotation} -> {:ok, quotation}
+      _quotes -> {:error, PTAX.CurrencyNotQuotedError.exception(currency: currency)}
     end
   end
 

@@ -22,22 +22,22 @@ defmodule PTAX.Quotes do
     |> Req.Request.prepend_response_steps(save_to_cache: &save_to_cache/1)
     |> Req.Request.append_response_steps(decode_body: &decode_body/1)
     |> Req.get([url: url, cache_dir: cache_dir] ++ req_options)
-    |> unwrap(date)
+    |> handle_response(date)
   end
 
-  defp unwrap({:ok, %{status: 200, body: quotes}}, _date) do
+  defp handle_response({:ok, %{status: 200, body: quotes}}, _date) do
     {:ok, quotes}
   end
 
-  defp unwrap({:ok, %{status: 404}}, date) do
+  defp handle_response({:ok, %{status: 404}}, date) do
     {:error, PTAX.QuotesNotFoundError.exception(date: date)}
   end
 
-  defp unwrap({:ok, %{status: status}}, _date) do
+  defp handle_response({:ok, %{status: status}}, _date) do
     {:error, PTAX.UnexpectedResponseError.exception(status: status)}
   end
 
-  defp unwrap({:error, exception}, _date) do
+  defp handle_response({:error, exception}, _date) do
     {:error, exception}
   end
 

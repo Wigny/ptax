@@ -53,11 +53,11 @@ iex> PTAX.exchange!(Money.new!(:USD, "100"), :BRL, ~D[2025-12-25])
 ** (PTAX.QuotesNotFoundError) no quotes published for 2025-12-25
 ```
 
-Currencies BCB does not quote return a `Money.ExchangeRateError`:
+Currencies BCB does not quote return a `PTAX.CurrencyNotQuotedError`:
 
 ```elixir
 iex> PTAX.exchange(Money.new!(:USD, "100"), :ZWL, ~D[2026-07-31])
-{:error, %Money.ExchangeRateError{message: "No exchange rate is available for currency :ZWL"}}
+{:error, %PTAX.CurrencyNotQuotedError{currency: :ZWL}}
 ```
 
 > #### Always convert in a single call {: .warning}
@@ -91,16 +91,16 @@ Mox.defmock(MyApp.RatesMock, for: PTAX.Rates)
 ExUnit.start()
 ```
 
-The callback receives the currency being converted from and returns rates relative to it, in the shape `PTAX.Rates` describes.
+The callback receives the pair being converted and returns the rate from the first currency to the second, as a `Decimal`.
 
 ```elixir
 defmodule MyApp.ConversionTest do
   use ExUnit.Case, async: true
 
   test "converts at the published rate" do
-    Mox.stub(MyApp.RatesMock, :rates, fn
-      :USD, ~D[2026-07-31] -> {:ok, %{USD: Decimal.new(1), BRL: Decimal.new("5.4321")}}
-      :BRL, ~D[2026-07-31] -> {:ok, %{BRL: Decimal.new(1), USD: Decimal.new("0.1834")}}
+    Mox.stub(MyApp.RatesMock, :rate, fn
+      :USD, :BRL, ~D[2026-07-31] -> {:ok, Decimal.new("5.4321")}
+      :BRL, :USD, ~D[2026-07-31] -> {:ok, Decimal.new("0.1834")}
     end)
 
     assert PTAX.exchange!(Money.new!(:USD, "100"), :BRL, ~D[2026-07-31]) == Money.new(:BRL, "543.2100000")

@@ -29,13 +29,17 @@ defmodule PTAXTest do
 
   describe "unquoted currencies" do
     test "returns an error when the target currency is absent from the bulletin" do
-      assert {:error, %Money.ExchangeRateError{} = error} = PTAX.exchange(~M[1]USD, :ZWL, @date)
-      assert Exception.message(error) == "No exchange rate is available for currency :ZWL"
+      assert {:error, %PTAX.CurrencyNotQuotedError{} = error} =
+               PTAX.exchange(~M[1]USD, :ZWL, @date)
+
+      assert Exception.message(error) == "PTAX does not quote :ZWL"
     end
 
     test "returns an error when the source currency is absent from the bulletin" do
-      assert {:error, %Money.ExchangeRateError{} = error} = PTAX.exchange(~M[1]ZWL, :USD, @date)
-      assert Exception.message(error) == "No exchange rate is available for currency :ZWL"
+      assert {:error, %PTAX.CurrencyNotQuotedError{} = error} =
+               PTAX.exchange(~M[1]ZWL, :USD, @date)
+
+      assert Exception.message(error) == "PTAX does not quote :ZWL"
     end
   end
 
