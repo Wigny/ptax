@@ -33,7 +33,11 @@ defmodule PTAX.Quotes do
     {:error, PTAX.QuotesNotFoundError.exception(date: date)}
   end
 
-  defp unwrap({:error, %Req.TransportError{} = exception}, _date) do
+  defp unwrap({:ok, %{status: status}}, _date) do
+    {:error, PTAX.UnexpectedResponseError.exception(status: status)}
+  end
+
+  defp unwrap({:error, exception}, _date) do
     {:error, exception}
   end
 
@@ -53,9 +57,10 @@ defmodule PTAX.Quotes do
   end
 
   defp save_to_cache({request, response}) do
-    if response.status == 200 do
-      File.mkdir_p!(request.options.cache_dir)
-      File.write!(filepath(request), response.body)
+    path = filepath(request)
+
+    if response.status == 200 and not File.exists?(path) do
+      with :ok <- File.mkdir_p(request.options.cache_dir), do: File.write(path, response.body)
     end
 
     {request, response}

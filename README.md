@@ -24,10 +24,10 @@ Converted amounts are rounded to 7 decimal places. The rate itself is never roun
 ### Convert using the latest published quotes
 
 ```elixir
-iex> PTAX.exchange(Money.new(:USD, "100"), :BRL)
+iex> PTAX.exchange(Money.new!(:USD, "100"), :BRL)
 {:ok, %Money{}}
 
-iex> PTAX.exchange!(Money.new(:USD, "100"), :BRL)
+iex> PTAX.exchange!(Money.new!(:USD, "100"), :BRL)
 %Money{}
 ```
 
@@ -36,33 +36,42 @@ BCB publishes a bulletin only on business days, so the lookup walks back up to 7
 ### Convert using the quotes for a specific date
 
 ```elixir
-iex> PTAX.exchange(Money.new(:GBP, "50"), :BRL, ~D[2026-07-31])
+iex> PTAX.exchange(Money.new!(:GBP, "50"), :BRL, ~D[2026-07-31])
 {:ok, Money.new(:BRL, "341.8150000")}
 
-iex> PTAX.exchange!(Money.new(:GBP, "50"), :BRL, ~D[2026-07-31])
+iex> PTAX.exchange!(Money.new!(:GBP, "50"), :BRL, ~D[2026-07-31])
 Money.new(:BRL, "341.8150000")
 ```
 
 Dates with no bulletin (weekends, holidays) return an error, or raise with the bang variants:
 
 ```elixir
-iex> PTAX.exchange(Money.new(:USD, "100"), :BRL, ~D[2025-12-25])
+iex> PTAX.exchange(Money.new!(:USD, "100"), :BRL, ~D[2025-12-25])
 {:error, %PTAX.QuotesNotFoundError{date: ~D[2025-12-25]}}
 
-iex> PTAX.exchange!(Money.new(:USD, "100"), :BRL, ~D[2025-12-25])
+iex> PTAX.exchange!(Money.new!(:USD, "100"), :BRL, ~D[2025-12-25])
 ** (PTAX.QuotesNotFoundError) no quotes published for 2025-12-25
 ```
 
 Currencies BCB does not quote return a `Money.ExchangeRateError`:
 
 ```elixir
-iex> PTAX.exchange(Money.new(:USD, "100"), :ZWL, ~D[2026-07-31])
+iex> PTAX.exchange(Money.new!(:USD, "100"), :ZWL, ~D[2026-07-31])
 {:error, %Money.ExchangeRateError{message: "No exchange rate is available for currency :ZWL"}}
 ```
 
 > #### Always convert in a single call {: .warning}
 >
 > BCB treats a conversion between two currencies other than BRL and USD as its own operation, not as a conversion into USD followed by one out of it. Routing an amount through an intermediate currency yourself does not reproduce the published result, and the difference reaches several percent on currencies with a wide spread.
+
+## Caching
+
+Bulletins are cached on disk, in the user cache directory by default. Set `:cache_dir` to store them elsewhere, or to `nil` to download the bulletin on every conversion:
+
+```elixir
+# config/config.exs
+config :ptax, req_options: [cache_dir: "/var/cache/ptax"]
+```
 
 ## Testing
 
@@ -82,7 +91,7 @@ Mox.defmock(MyApp.RatesMock, for: PTAX.Rates)
 ExUnit.start()
 ```
 
-The callback receives the currency being converted from and returns rates relative to it: each value is how many units of that currency one unit of the base currency buys, and the base currency itself maps to `1`. A map built for one base currency cannot be reused for another, because the two directions of a pair read opposite sides of the spread and are not reciprocal.
+The callback receives the currency being converted from and returns rates relative to it, in the shape `PTAX.Rates` describes.
 
 ```elixir
 defmodule MyApp.ConversionTest do
@@ -94,13 +103,12 @@ defmodule MyApp.ConversionTest do
       :BRL, ~D[2026-07-31] -> {:ok, %{BRL: Decimal.new(1), USD: Decimal.new("0.1834")}}
     end)
 
-    assert PTAX.exchange!(Money.new(:USD, "100"), :BRL, ~D[2026-07-31]) == Money.new(:BRL, "543.2100000")
-    assert PTAX.exchange!(Money.new(:BRL, "100"), :USD, ~D[2026-07-31]) == Money.new(:USD, "18.3400000")
+    assert PTAX.exchange!(Money.new!(:USD, "100"), :BRL, ~D[2026-07-31]) == Money.new(:BRL, "543.2100000")
+    assert PTAX.exchange!(Money.new!(:BRL, "100"), :USD, ~D[2026-07-31]) == Money.new(:USD, "18.3400000")
   end
 end
 ```
 
 ## See also
 
-- [`Money.to_currency/2,3`](https://hexdocs.pm/ex_money/Money.html#to_currency/3) — convert between any two currencies
-- [`Money.cross_rate/2`](https://hexdocs.pm/ex_money/Money.html#cross_rate/2) — derive a cross rate between two currencies
+- [`ex_money`](https://hexdocs.pm/ex_money) — the `Money` type PTAX converts

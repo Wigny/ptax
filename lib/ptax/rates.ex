@@ -1,11 +1,6 @@
 defmodule PTAX.Rates do
   @moduledoc """
-  The contract `PTAX` reads BCB's rates through.
-
-  Set `:ptax, :rates` to a module implementing it so a test suite serves known rates instead of
-  reaching BCB:
-
-      config :ptax, rates: MyApp.RatesMock
+  The rates BCB's bulletin for a date implies, in the shape `ex_money` takes them.
 
   The rates are relative to the base currency: each value is how many units of that currency one
   unit of the base currency buys, and the base currency itself maps to `1`. A map built for one

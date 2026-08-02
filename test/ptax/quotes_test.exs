@@ -41,8 +41,21 @@ defmodule PTAX.QuotesTest do
     end
 
     test "returns an error when BCB published nothing for the date" do
-      assert Quotes.fetch(~D[2026-08-01]) ==
-               {:error, %PTAX.QuotesNotFoundError{date: ~D[2026-08-01]}}
+      assert Quotes.fetch(~D[2025-12-25]) ==
+               {:error, %PTAX.QuotesNotFoundError{date: ~D[2025-12-25]}}
+    end
+
+    test "returns an error when BCB responds with an unexpected status" do
+      Req.Test.stub(PTAX.Quotes, &Plug.Conn.send_resp(&1, 503, ""))
+
+      assert {:error, %PTAX.UnexpectedResponseError{} = error} = Quotes.fetch(~D[2026-07-31])
+      assert Exception.message(error) == "BCB responded with an unexpected status: 503"
+    end
+
+    test "returns an error when the request fails" do
+      Req.Test.stub(PTAX.Quotes, &Req.Test.transport_error(&1, :closed))
+
+      assert {:error, %Req.TransportError{reason: :closed}} = Quotes.fetch(~D[2026-07-31])
     end
   end
 
@@ -72,6 +85,23 @@ defmodule PTAX.QuotesTest do
 
       assert {:ok, quotes} = Quotes.fetch(~D[2026-07-30])
       assert Map.has_key?(quotes, :USD)
+    end
+
+    test "serves the bulletin when it cannot be cached", %{tmp_dir: tmp_dir} do
+      File.chmod!(tmp_dir, 0o555)
+      on_exit(fn -> File.chmod!(tmp_dir, 0o755) end)
+
+      assert {:ok, _quotes} = Quotes.fetch(~D[2026-07-31])
+      refute File.exists?(Path.join(tmp_dir, "20260731.csv"))
+    end
+
+    test "leaves an already cached file untouched", %{tmp_dir: tmp_dir} do
+      path = Path.join(tmp_dir, "20260730.csv")
+
+      File.write!(path, "30/07/2026;220;A;USD;5,00000000;5,10000000;1,00000000;1,00000000")
+      File.chmod!(path, 0o444)
+
+      assert {:ok, _quotes} = Quotes.fetch(~D[2026-07-30])
     end
   end
 end

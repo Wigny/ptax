@@ -21,9 +21,9 @@ defmodule PTAX do
 
   ## Examples
 
-      iex> {:ok, %Money{}} = PTAX.exchange(Money.new(:USD, "100"), :BRL)
+      iex> {:ok, %Money{}} = PTAX.exchange(Money.new!(:USD, "100"), :BRL)
 
-      iex> PTAX.exchange(Money.new(:BRL, "100"), :XYZ)
+      iex> PTAX.exchange(Money.new!(:BRL, "100"), :XYZ)
       {:error, %Money.UnknownCurrencyError{message: "The currency :XYZ is not known."}}
 
   """
@@ -48,9 +48,9 @@ defmodule PTAX do
 
   ## Examples
 
-      iex> %Money{} = PTAX.exchange!(Money.new(:USD, "100"), :BRL)
+      iex> %Money{} = PTAX.exchange!(Money.new!(:USD, "100"), :BRL)
 
-      iex> PTAX.exchange!(Money.new(:BRL, "100"), :XYZ)
+      iex> PTAX.exchange!(Money.new!(:BRL, "100"), :XYZ)
       ** (Money.UnknownCurrencyError) The currency :XYZ is not known.
 
   """
@@ -65,15 +65,15 @@ defmodule PTAX do
   @doc """
   Exchanges a `Money` amount to the given currency using the PTAX quotes for the given date.
 
-  Returns `{:ok, Money.t()}` on success, or `{:error, exception}` if the currency is not
-  supported.
+  Returns `{:ok, Money.t()}` on success, or `{:error, exception}` if BCB published no bulletin for
+  the date, or if the currency is not supported.
 
   ## Examples
 
-      iex> PTAX.exchange(Money.new(:GBP, "50"), :BRL, ~D[2026-07-31])
+      iex> PTAX.exchange(Money.new!(:GBP, "50"), :BRL, ~D[2026-07-31])
       {:ok, Money.new(:BRL, "341.8150000")}
 
-      iex> PTAX.exchange(Money.new(:BRL, "100"), :ZWL, ~D[2026-07-31])
+      iex> PTAX.exchange(Money.new!(:BRL, "100"), :ZWL, ~D[2026-07-31])
       {:error, %Money.ExchangeRateError{message: "No exchange rate is available for currency :ZWL"}}
 
   """
@@ -94,14 +94,14 @@ defmodule PTAX do
   @doc """
   Exchanges a `Money` amount to the given currency using the PTAX quotes for the given date.
 
-  Raises if the currency is not supported.
+  Raises if BCB published no bulletin for the date, or if the currency is not supported.
 
   ## Examples
 
-      iex> PTAX.exchange!(Money.new(:GBP, "50"), :BRL, ~D[2026-07-31])
+      iex> PTAX.exchange!(Money.new!(:GBP, "50"), :BRL, ~D[2026-07-31])
       Money.new(:BRL, "341.8150000")
 
-      iex> PTAX.exchange!(Money.new(:BRL, "100"), :ZWL, ~D[2026-07-31])
+      iex> PTAX.exchange!(Money.new!(:BRL, "100"), :ZWL, ~D[2026-07-31])
       ** (Money.ExchangeRateError) No exchange rate is available for currency :ZWL
 
   """

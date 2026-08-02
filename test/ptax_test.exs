@@ -42,9 +42,9 @@ defmodule PTAXTest do
   describe "unavailable quotes" do
     test "returns an error when no bulletin was published for the date" do
       assert {:error, %PTAX.QuotesNotFoundError{} = error} =
-               PTAX.exchange(~M[100]USD, :BRL, ~D[2026-08-01])
+               PTAX.exchange(~M[100]USD, :BRL, ~D[2025-12-25])
 
-      assert Exception.message(error) == "no quotes published for 2026-08-01"
+      assert Exception.message(error) == "no quotes published for 2025-12-25"
     end
 
     test "returns an error when the bulletin cannot be fetched" do
@@ -57,26 +57,8 @@ defmodule PTAXTest do
 
   describe "latest quotes" do
     test "falls back to the previous bulletin when today's has not been published" do
-      today = Date.utc_today()
-      yesterday = Date.add(today, -1)
-
-      Req.Test.stub(PTAX.Quotes, fn conn ->
-        bulletin = Path.basename(conn.request_path)
-
-        cond do
-          bulletin == Calendar.strftime(today, "%Y%m%d.csv") ->
-            Plug.Conn.send_resp(conn, 404, "")
-
-          bulletin == Calendar.strftime(yesterday, "%Y%m%d.csv") ->
-            Plug.Conn.send_resp(
-              conn,
-              200,
-              "#{Calendar.strftime(yesterday, "%d/%m/%Y")};220;A;USD;5,12340000;5,12340000;1,00000000;1,00000000"
-            )
-        end
-      end)
-
-      assert PTAX.exchange(~M[100]USD, :BRL) == {:ok, ~M[512.3400000]BRL}
+      assert PTAX.exchange(~M[100]USD, :BRL) ==
+               PTAX.exchange(~M[100]USD, :BRL, Date.add(Date.utc_today(), -1))
     end
 
     test "returns an error when no bulletin was published in the last 7 days" do

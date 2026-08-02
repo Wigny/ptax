@@ -87,9 +87,9 @@ defmodule PTAX.RatesTest do
     end
 
     test "returns an error when no bulletin was published for the date" do
-      assert {:error, %PTAX.QuotesNotFoundError{} = error} = Rates.rates(:USD, ~D[2026-08-01])
+      assert {:error, %PTAX.QuotesNotFoundError{} = error} = Rates.rates(:USD, ~D[2025-12-25])
 
-      assert Exception.message(error) == "no quotes published for 2026-08-01"
+      assert Exception.message(error) == "no quotes published for 2025-12-25"
     end
   end
 
