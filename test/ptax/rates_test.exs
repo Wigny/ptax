@@ -9,6 +9,14 @@ defmodule PTAX.RatesTest do
     Req.Test.stub(PTAX.Quotes, PTAX.Quotes.Stub)
   end
 
+  describe "same-currency rates" do
+    test "quotes a currency into itself as 1" do
+      assert rate(:BRL, :BRL) == Decimal.new("1")
+      assert rate(:SCR, :SCR) == Decimal.new("1")
+      assert rate(:FJD, :FJD) == Decimal.new("1")
+    end
+  end
+
   describe "BRL rates" do
     test "quotes a foreign currency into BRL at its buy rate" do
       assert rate(:SCR, :BRL) == Decimal.new("0.33430000")
@@ -71,13 +79,7 @@ defmodule PTAX.RatesTest do
     end
   end
 
-  describe "rate/3" do
-    test "quotes a currency into itself as 1" do
-      assert rate(:BRL, :BRL) == Decimal.new("1")
-      assert rate(:SCR, :SCR) == Decimal.new("1")
-      assert rate(:FJD, :FJD) == Decimal.new("1")
-    end
-
+  describe "unquoted currencies" do
     test "returns an error when the source currency is absent from the bulletin" do
       assert {:error, %PTAX.CurrencyNotQuotedError{} = error} = Rates.rate(:ZWL, :USD, @date)
       assert Exception.message(error) == "PTAX does not quote :ZWL"
@@ -87,7 +89,9 @@ defmodule PTAX.RatesTest do
       assert {:error, %PTAX.CurrencyNotQuotedError{} = error} = Rates.rate(:USD, :ZWL, @date)
       assert Exception.message(error) == "PTAX does not quote :ZWL"
     end
+  end
 
+  describe "unavailable quotes" do
     test "returns an error when no bulletin was published for the date" do
       assert {:error, %PTAX.QuotesNotFoundError{} = error} =
                Rates.rate(:USD, :BRL, ~D[2025-12-25])

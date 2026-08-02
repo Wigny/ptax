@@ -50,19 +50,23 @@ defmodule PTAXTest do
 
       assert Exception.message(error) == "no quotes published for 2025-12-25"
     end
-
-    test "returns an error when the bulletin cannot be fetched" do
-      Req.Test.stub(PTAX.Quotes, &Req.Test.transport_error(&1, :timeout))
-
-      assert {:error, %Req.TransportError{} = error} = PTAX.exchange(~M[100]USD, :BRL, @date)
-      assert Exception.message(error) == "timeout"
-    end
   end
 
   describe "latest quotes" do
     test "falls back to the previous bulletin when today's has not been published" do
       assert PTAX.exchange(~M[100]USD, :BRL) ==
                PTAX.exchange(~M[100]USD, :BRL, Date.add(Date.utc_today(), -1))
+    end
+
+    test "returns an error when the bulletin cannot be fetched" do
+      today_bulletin = Calendar.strftime(Date.utc_today(), "/Download/fechamento/%Y%m%d.csv")
+
+      Req.Test.stub(PTAX.Quotes, fn %{request_path: ^today_bulletin} = conn ->
+        Req.Test.transport_error(conn, :timeout)
+      end)
+
+      assert {:error, %Req.TransportError{} = error} = PTAX.exchange(~M[100]USD, :BRL)
+      assert Exception.message(error) == "timeout"
     end
 
     test "returns an error when no bulletin was published in the last 7 days" do
