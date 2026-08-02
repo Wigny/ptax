@@ -1,43 +1,27 @@
 # PTAX
 
-PTAX is the official exchange rate published daily by the Brazilian Central Bank (Banco Central do Brasil, BCB). It is the reference rate used in financial contracts, tax reporting, and regulatory filings in Brazil.
+PTAX is the official exchange rate published daily by the Brazilian Central Bank (Banco Central do Brasil, BCB). It is the reference rate used in financial contracts, tax reporting, and regulatory filings in Brazil. On every business day BCB publishes a bulletin on its [exchange rates page](https://www.bcb.gov.br/estabilidadefinanceira/cotacoestodas), listing, per currency, a bid and an ask against BRL and against USD.
 
-Quotes are fetched from the BCB's [exchange rates page](https://www.bcb.gov.br/estabilidadefinanceira/cotacoestodas) and represent the closing bid and ask rates for each currency pair against the Brazilian Real (BRL). The rate exposed by this library is the mid-point between those two quotes.
+`:ptax` is an Elixir library that converts `Money` amounts using those bulletins. Results match BCB's [online converter](https://www.bcb.gov.br/conversao).
 
 ## Installation
 
-Add PTAX to your project's dependencies in `mix.exs`:
+Add `:ptax` to your project's dependencies in `mix.exs`:
 
 ```elixir
 # mix.exs
 def deps do
   [
-    {:ptax, "~> 2.1"}
+    {:ptax, "~> 3.0"}
   ]
 end
 ```
 
-PTAX starts its own isolated retriever, so `ex_money`'s default auto-started retriever isn't needed. Turn it off:
-
-```elixir
-# config/config.exs
-config :ex_money, auto_start_exchange_rate_service: false
-```
-
-See [`ex_money`'s exchange rates service docs](https://ex-money.hexdocs.pm/readme.html#the-exchange-rates-service-process-supervision-and-startup) for details.
-
-In scripts and Livebook notebooks, pass the same config to `Mix.install/2`:
-
-```elixir
-Mix.install(
-  [{:ptax, "~> 2.1"}],
-  config: [ex_money: [auto_start_exchange_rate_service: false]]
-)
-```
-
 ## Usage
 
-### Convert using the latest known rates
+Converted amounts are rounded to 7 decimal places. The rate itself is never rounded, so scaling the amount scales the result exactly.
+
+### Convert using the latest published quotes
 
 ```elixir
 iex> PTAX.exchange(Money.new!(:USD, "100"), :BRL)
@@ -47,44 +31,79 @@ iex> PTAX.exchange!(Money.new!(:USD, "100"), :BRL)
 %Money{}
 ```
 
-The lookup automatically walks back up to 7 days to find the most recent available data.
+BCB publishes a bulletin only on business days, so the lookup walks back up to 7 days to find the most recent one.
 
-### Convert using rates for a specific date
+### Convert using the quotes for a specific date
 
 ```elixir
-iex> PTAX.exchange(Money.new!(:GBP, "50"), :BRL, ~D[2026-05-15])
-{:ok, Money.new!(:BRL, "337.63")}
+iex> PTAX.exchange(Money.new!(:GBP, "50"), :BRL, ~D[2026-07-31])
+{:ok, Money.new(:BRL, "341.8150000")}
 
-iex> PTAX.exchange!(Money.new!(:GBP, "50"), :BRL, ~D[2026-05-15])
-Money.new!(:BRL, "337.63")
+iex> PTAX.exchange!(Money.new!(:GBP, "50"), :BRL, ~D[2026-07-31])
+Money.new(:BRL, "341.8150000")
 ```
 
-Dates with no BCB data (weekends, holidays) return `{:error, reason}` or raise with the bang variants:
+Dates with no bulletin (weekends, holidays) return an error, or raise with the bang variants:
 
 ```elixir
 iex> PTAX.exchange(Money.new!(:USD, "100"), :BRL, ~D[2025-12-25])
-{:error, {Money.ExchangeRateError, "no exchange rates available for 2025-12-25"}}
+{:error, %PTAX.QuotesNotFoundError{date: ~D[2025-12-25]}}
 
 iex> PTAX.exchange!(Money.new!(:USD, "100"), :BRL, ~D[2025-12-25])
-** (Money.ExchangeRateError) no exchange rates available for 2025-12-25
+** (PTAX.QuotesNotFoundError) no quotes published for 2025-12-25
 ```
 
-## Using PTAX rates with `ex_money`
-
-PTAX runs as an isolated, named `ex_money` retriever (`PTAX.Retriever`), so it never interferes with any other `ex_money` retriever your application runs — you're free to use other providers for other currencies alongside it.
-
-To reach `ex_money`'s richer operations (arbitrary conversions, cross rates) with PTAX data, fetch rates from `PTAX.Retriever` and pass them to any `ex_money` function that accepts a rates map:
+Currencies BCB does not quote return a `PTAX.CurrencyNotQuotedError`:
 
 ```elixir
-rates = Money.ExchangeRates.Retriever.latest_rates(PTAX.Retriever)
-Money.to_currency(Money.new!(:USD, "100"), :BRL, rates)
+iex> PTAX.exchange(Money.new!(:USD, "100"), :ZWL, ~D[2026-07-31])
+{:error, %PTAX.CurrencyNotQuotedError{currency: :ZWL}}
+```
 
-historic = Money.ExchangeRates.Retriever.historic_rates(PTAX.Retriever, ~D[2026-05-15])
-Money.to_currency(Money.new!(:GBP, "50"), :BRL, historic)
+> #### Always convert in a single call {: .warning}
+>
+> BCB treats a conversion between two currencies other than BRL and USD as its own operation, not as a conversion into USD followed by one out of it. Routing an amount through an intermediate currency yourself does not reproduce the published result, and the difference reaches several percent on currencies with a wide spread.
+
+## Caching
+
+Once BCB publishes a bulletin it never changes, so each one is downloaded once and cached on disk. A bulletin that cannot be written or read is fetched from BCB instead.
+
+## Testing
+
+`PTAX` reads quotes through the `PTAX.Rates` behaviour. Point `:ptax, :rates` at a stub implementing it and a test suite serves known rates instead of reaching BCB.
+
+Any module implementing the behaviour works. With [Mox](https://hexdocs.pm/mox):
+
+```elixir
+# mix.exs
+{:mox, "~> 1.2", only: :test}
+
+# config/test.exs
+config :ptax, rates: MyApp.RatesMock
+
+# test/test_helper.exs
+Mox.defmock(MyApp.RatesMock, for: PTAX.Rates)
+ExUnit.start()
+```
+
+The callback receives the pair being converted and returns the rate from the first currency to the second, as a `Decimal`.
+
+```elixir
+defmodule MyApp.ConversionTest do
+  use ExUnit.Case, async: true
+
+  test "converts at the published rate" do
+    Mox.stub(MyApp.RatesMock, :rate, fn
+      :USD, :BRL, ~D[2026-07-31] -> {:ok, Decimal.new("5.4321")}
+      :BRL, :USD, ~D[2026-07-31] -> {:ok, Decimal.new("0.1834")}
+    end)
+
+    assert PTAX.exchange!(Money.new!(:USD, "100"), :BRL, ~D[2026-07-31]) == Money.new(:BRL, "543.2100000")
+    assert PTAX.exchange!(Money.new!(:BRL, "100"), :USD, ~D[2026-07-31]) == Money.new(:USD, "18.3400000")
+  end
+end
 ```
 
 ## See also
 
-- [`Money.to_currency/2,3`](https://hexdocs.pm/ex_money/Money.html#to_currency/3) — convert between any two currencies
-- [`Money.cross_rate/2`](https://hexdocs.pm/ex_money/Money.html#cross_rate/2) — derive a cross rate between two currencies
-- [`Money.ExchangeRates.Retriever`](https://hexdocs.pm/ex_money/Money.ExchangeRates.Retriever.html) — the retriever process and its named-instance functions
+- [`ex_money`](https://hexdocs.pm/ex_money) — the `Money` type PTAX converts

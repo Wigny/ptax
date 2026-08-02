@@ -4,7 +4,7 @@ defmodule PTAX.MixProject do
   def project do
     [
       app: :ptax,
-      version: "2.1.0",
+      version: "3.0.0",
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -15,17 +15,15 @@ defmodule PTAX.MixProject do
     ]
   end
 
-  def application do
-    [mod: {PTAX.Application, []}]
-  end
-
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_env), do: ["lib"]
 
   defp deps do
     [
+      {:ex_money, "~> 6.2"},
       {:decimal, "~> 3.1"},
-      {:ex_money, "~> 6.1"},
+      {:req, "~> 0.7"},
+      {:plug, "~> 1.20", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
