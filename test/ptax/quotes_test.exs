@@ -76,7 +76,7 @@ defmodule PTAX.QuotesTest do
       assert File.exists?(Path.join(tmp_dir, "20260731.csv"))
     end
 
-    test "reads from the cached file instead of fetching the bulletin it again",
+    test "reads from the cached file instead of fetching the bulletin again",
          %{tmp_dir: tmp_dir} do
       File.write!(
         Path.join(tmp_dir, "20260730.csv"),
@@ -84,7 +84,7 @@ defmodule PTAX.QuotesTest do
       )
 
       assert {:ok, quotes} = Quotes.fetch(~D[2026-07-30])
-      assert Map.has_key?(quotes, :USD)
+      assert quotes[:USD].bid == Decimal.new("5.00000000")
     end
 
     test "serves the bulletin when it cannot be cached", %{tmp_dir: tmp_dir} do
@@ -111,7 +111,8 @@ defmodule PTAX.QuotesTest do
       File.write!(path, "30/07/2026;220;A;USD;5,00000000;5,10000000;1,00000000;1,00000000")
       File.chmod!(path, 0o444)
 
-      assert {:ok, _quotes} = Quotes.fetch(~D[2026-07-30])
+      assert {:ok, quotes} = Quotes.fetch(~D[2026-07-30])
+      assert quotes[:USD].bid == Decimal.new("5.00000000")
     end
   end
 end

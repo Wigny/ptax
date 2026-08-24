@@ -79,7 +79,7 @@ defmodule PTAXTest do
     end
 
     test "returns an error when no bulletin was published in the last 7 days" do
-      Req.Test.stub(PTAX.Quotes, fn conn -> Plug.Conn.send_resp(conn, 404, "") end)
+      Req.Test.stub(PTAX.Quotes, &Plug.Conn.send_resp(&1, 404, ""))
 
       assert {:error, %PTAX.LatestQuotesNotFoundError{} = error} = PTAX.exchange(~M[100]USD, :BRL)
       assert Exception.message(error) == "no quotes published in the last 7 days"
