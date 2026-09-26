@@ -9,6 +9,19 @@ defmodule PTAX.Quotes do
           ask_parity: Decimal.t() | nil
         }
 
+  @publish_time ~T[13:00:00]
+
+  @spec publish_dates(DateTime.t()) :: Enumerable.t(Date.t())
+  def publish_dates(%DateTime{time_zone: "America/Sao_Paulo"} = from) do
+    before_publish? = Time.before?(from, @publish_time)
+
+    from
+    |> Date.add((before_publish? && -1) || 0)
+    |> Stream.iterate(&Date.add(&1, -1))
+    |> Stream.reject(&(Date.day_of_week(&1) > 5))
+    |> Stream.reject(&Dayoff.holiday?(&1, "BR", types: [:public, :bank]))
+  end
+
   @spec fetch(Date.t()) :: {:ok, %{atom => quotation}} | {:error, Exception.t()}
   def fetch(%Date{} = date) do
     req_options = Application.get_env(:ptax, :req_options, [])

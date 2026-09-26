@@ -13,10 +13,10 @@ end
 
 defmodule PTAX.LatestQuotesNotFoundError do
   @moduledoc """
-  Exception for a 7-day window without a single bulletin.
+  Exception for the latest two business days without a bulletin.
   """
 
-  defexception message: "no quotes published in the last 7 days"
+  defexception message: "no quotes published for the latest two business days"
 end
 
 defmodule PTAX.CurrencyNotQuotedError do

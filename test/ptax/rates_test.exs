@@ -100,8 +100,53 @@ defmodule PTAX.RatesTest do
     end
   end
 
+  describe "latest rates" do
+    test "falls back to the previous bulletin when the latest has not been published" do
+      latest_bulletin =
+        Calendar.strftime(latest_publish_date(), "/Download/fechamento/%Y%m%d.csv")
+
+      Req.Test.stub(PTAX.Quotes, fn
+        %{request_path: ^latest_bulletin} = conn ->
+          Plug.Conn.send_resp(conn, 404, "")
+
+        conn ->
+          Plug.Conn.send_resp(
+            conn,
+            200,
+            "01/01/2026;220;A;USD;5,00000000;5,00000000;1,00000000;1,00000000"
+          )
+      end)
+
+      assert Rates.rate(:USD, :BRL) == {:ok, Decimal.new("5.00000000")}
+    end
+
+    test "returns an error when the bulletin cannot be fetched" do
+      Req.Test.stub(PTAX.Quotes, &Req.Test.transport_error(&1, :timeout))
+
+      assert {:error, %Req.TransportError{} = error} = Rates.rate(:USD, :BRL)
+      assert Exception.message(error) == "timeout"
+    end
+
+    test "returns an error when no bulletin was published for the latest two business days" do
+      Req.Test.stub(PTAX.Quotes, &Plug.Conn.send_resp(&1, 404, ""))
+
+      assert {:error, %PTAX.LatestQuotesNotFoundError{} = error} = Rates.rate(:USD, :BRL)
+
+      assert Exception.message(error) ==
+               "no quotes published for the latest two business days"
+    end
+  end
+
   defp rate(from_currency, to_currency) do
     {:ok, rate} = Rates.rate(from_currency, to_currency, @date)
     rate
+  end
+
+  defp latest_publish_date do
+    "America/Sao_Paulo"
+    |> DateTime.now!(Tzdata.TimeZoneDatabase)
+    |> PTAX.Quotes.publish_dates()
+    |> Enum.take(1)
+    |> List.first()
   end
 end

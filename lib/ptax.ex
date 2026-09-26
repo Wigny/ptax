@@ -15,9 +15,9 @@ defmodule PTAX do
   @doc """
   Exchanges a `Money` amount to the given currency using the latest published PTAX quotes.
 
-  BCB publishes a bulletin only on business days, so the most recent one within the last 7 days
-  is used. Returns `{:error, exception}` if none was published in that window, or if the currency
-  is not supported.
+  BCB publishes a bulletin only on business days, from 13h Brasília time, so the bulletin of the
+  latest business day is used, or of the one before it if the latest is not out yet. Returns
+  `{:error, exception}` if neither was published, or if the currency is not supported.
 
   ## Examples
 
@@ -29,21 +29,20 @@ defmodule PTAX do
   """
   @spec exchange(Money.t(), Money.currency_reference()) ::
           {:ok, Money.t()} | {:error, Exception.t()}
-  def exchange(%Money{} = money, to_currency) do
-    today = Date.utc_today()
+  def exchange(%Money{} = money, currency) do
+    rates_module = Application.get_env(:ptax, :rates, PTAX.Rates)
 
-    today
-    |> Date.range(Date.add(today, -6), -1)
-    |> Enum.reject(&(Date.day_of_week(&1) in [6, 7]))
-    |> Enum.find_value({:error, %PTAX.LatestQuotesNotFoundError{}}, fn date ->
-      with {:error, %PTAX.QuotesNotFoundError{}} <- exchange(money, to_currency, date), do: nil
-    end)
+    with {:ok, currency} <- parse_currency(currency),
+         {:ok, rate} <- rates_module.rate(money.currency, currency) do
+      {:ok, to_currency!(money, currency, rate)}
+    end
   end
 
   @doc """
   Exchanges a `Money` amount to the given currency using the latest published PTAX quotes.
 
-  Raises if no bulletin was published in the last 7 days, or if the currency is not supported.
+  Raises if no bulletin was published for the latest two business days, or if the currency is not
+  supported.
 
   ## Examples
 
@@ -78,22 +77,13 @@ defmodule PTAX do
   """
   @spec exchange(Money.t(), Money.currency_reference(), Date.t()) ::
           {:ok, Money.t()} | {:error, Exception.t()}
-  def exchange(%Money{} = money, to_currency, %Date{} = date) do
-    with {:ok, to_currency} <- Money.validate_currency(to_currency),
-         {:ok, rates} <- rates(money.currency, to_currency, date),
-         {:ok, money} <- Money.to_currency(money, to_currency, rates) do
-      {:ok, Money.round(money, currency_digits: 7)}
-    else
-      {:error, {module, reason}} -> {:error, module.exception(reason)}
-      {:error, exception} -> {:error, exception}
-    end
-  end
-
-  defp rates(from_currency, to_currency, date) do
+  def exchange(%Money{} = money, currency, %Date{} = date) do
     rates_module = Application.get_env(:ptax, :rates, PTAX.Rates)
 
-    with {:ok, rate} <- rates_module.rate(from_currency, to_currency, date),
-         do: {:ok, %{from_currency => Decimal.new(1), to_currency => rate}}
+    with {:ok, currency} <- parse_currency(currency),
+         {:ok, rate} <- rates_module.rate(money.currency, currency, date) do
+      {:ok, to_currency!(money, currency, rate)}
+    end
   end
 
   @doc """
@@ -116,5 +106,18 @@ defmodule PTAX do
       {:ok, money} -> money
       {:error, exception} -> raise exception
     end
+  end
+
+  defp parse_currency(currency) do
+    case Money.validate_currency(currency) do
+      {:ok, currency} -> {:ok, currency}
+      {:error, {module, reason}} -> {:error, module.exception(reason)}
+    end
+  end
+
+  defp to_currency!(money, to_currency, rate) do
+    money
+    |> Money.to_currency!(to_currency, %{money.currency => Decimal.new(1), to_currency => rate})
+    |> Money.round(currency_digits: 7)
   end
 end

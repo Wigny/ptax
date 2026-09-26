@@ -52,37 +52,9 @@ defmodule PTAXTest do
     end
   end
 
-  describe "latest quotes" do
-    test "falls back to the previous bulletin when today's has not been published" do
-      today_bulletin = Calendar.strftime(Date.utc_today(), "/Download/fechamento/%Y%m%d.csv")
-
-      Req.Test.stub(PTAX.Quotes, fn
-        %{request_path: ^today_bulletin} = conn ->
-          Plug.Conn.send_resp(conn, 404, "")
-
-        conn ->
-          Plug.Conn.send_resp(
-            conn,
-            200,
-            "01/01/2026;220;A;USD;5,00000000;5,00000000;1,00000000;1,00000000"
-          )
-      end)
-
-      assert PTAX.exchange(~M[100]USD, :BRL) == {:ok, ~M[500.0000000]BRL}
-    end
-
-    test "returns an error when the bulletin cannot be fetched" do
-      Req.Test.stub(PTAX.Quotes, &Req.Test.transport_error(&1, :timeout))
-
-      assert {:error, %Req.TransportError{} = error} = PTAX.exchange(~M[100]USD, :BRL)
-      assert Exception.message(error) == "timeout"
-    end
-
-    test "returns an error when no bulletin was published in the last 7 days" do
-      Req.Test.stub(PTAX.Quotes, &Plug.Conn.send_resp(&1, 404, ""))
-
-      assert {:error, %PTAX.LatestQuotesNotFoundError{} = error} = PTAX.exchange(~M[100]USD, :BRL)
-      assert Exception.message(error) == "no quotes published in the last 7 days"
+  describe "exchange/2" do
+    test "converts the amount at the latest published rate" do
+      assert PTAX.exchange(~M[100]USD, :BRL) == {:ok, ~M[507.6700000]BRL}
     end
   end
 end

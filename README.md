@@ -84,7 +84,7 @@ Mox.defmock(MyApp.RatesMock, for: PTAX.Rates)
 ExUnit.start()
 ```
 
-The callback receives the pair being converted and returns the rate from the first currency to the second, as a `Decimal`.
+Both callbacks receive the pair being converted and return the rate from the first currency to the second, as a `Decimal`: `rate/3` for the given date, used by `PTAX.exchange/3`, and `rate/2` for the latest bulletin, used by `PTAX.exchange/2`.
 
 ```elixir
 defmodule MyApp.ConversionTest do
