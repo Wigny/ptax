@@ -52,6 +52,8 @@ defmodule PTAX.Rates do
     end
   end
 
+  defp fetch_quotation(_quotes, :BRL), do: {:ok, nil}
+
   defp fetch_quotation(quotes, currency) do
     case quotes do
       %{^currency => quotation} -> {:ok, quotation}
@@ -60,8 +62,8 @@ defmodule PTAX.Rates do
   end
 
   defp quoted_rate({currency, _base}, {currency, _counter}), do: Decimal.new(1)
-  defp quoted_rate({:BRL, %{type: :base}}, {_to, counter}), do: Decimal.div(1, counter.ask)
-  defp quoted_rate({_from, base}, {:BRL, %{type: :base}}), do: base.bid
+  defp quoted_rate({:BRL, nil}, {_to, counter}), do: Decimal.div(1, counter.ask)
+  defp quoted_rate({_from, base}, {:BRL, nil}), do: base.bid
 
   defp quoted_rate({:USD, _base}, {_to, %{type: :direct} = counter}),
     do: Decimal.div(1, counter.ask_parity)

@@ -2,11 +2,11 @@ defmodule PTAX.Quotes do
   @moduledoc false
 
   @type quotation :: %{
-          type: :base | :direct | :indirect,
+          type: :direct | :indirect,
           bid: Decimal.t(),
           ask: Decimal.t(),
-          bid_parity: Decimal.t() | nil,
-          ask_parity: Decimal.t() | nil
+          bid_parity: Decimal.t(),
+          ask_parity: Decimal.t()
         }
 
   @publish_time ~T[13:00:00]
@@ -93,19 +93,11 @@ defmodule PTAX.Quotes do
     end
   end
 
-  @brl_quotation %{
-    type: :base,
-    bid: Decimal.new(1),
-    ask: Decimal.new(1),
-    bid_parity: nil,
-    ask_parity: nil
-  }
-
   defp decode_quotes({request, %{status: 200, body: body} = response}) do
     body =
       body
       |> String.split(["\r\n", "\n"], trim: true)
-      |> Enum.reduce(%{BRL: @brl_quotation}, &parse_row/2)
+      |> Enum.reduce(%{}, &parse_row/2)
 
     {request, %{response | body: body}}
   end

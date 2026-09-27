@@ -41,15 +41,7 @@ defmodule PTAX.QuotesTest do
     test "returns quotes for every known currency in the bulletin" do
       assert {:ok, quotes} = Quotes.fetch(~D[2026-07-31])
 
-      assert map_size(quotes) == 156
-
-      assert quotes[:BRL] == %{
-               ask: Decimal.new("1"),
-               bid: Decimal.new("1"),
-               ask_parity: nil,
-               bid_parity: nil,
-               type: :base
-             }
+      assert map_size(quotes) == 155
 
       assert quotes[:EUR] == %{
                ask: Decimal.new("5.84900000"),
