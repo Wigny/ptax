@@ -53,8 +53,8 @@ defmodule PTAX do
 
   """
   @spec exchange!(Money.t(), Money.currency_reference()) :: Money.t()
-  def exchange!(%Money{} = money, to_currency) do
-    case exchange(money, to_currency) do
+  def exchange!(%Money{} = money, currency) do
+    case exchange(money, currency) do
       {:ok, money} -> money
       {:error, exception} -> raise exception
     end
@@ -101,8 +101,8 @@ defmodule PTAX do
 
   """
   @spec exchange!(Money.t(), Money.currency_reference(), Date.t()) :: Money.t()
-  def exchange!(%Money{} = money, to_currency, %Date{} = date) do
-    case exchange(money, to_currency, date) do
+  def exchange!(%Money{} = money, currency, %Date{} = date) do
+    case exchange(money, currency, date) do
       {:ok, money} -> money
       {:error, exception} -> raise exception
     end
@@ -115,9 +115,9 @@ defmodule PTAX do
     end
   end
 
-  defp to_currency!(money, to_currency, rate) do
+  defp to_currency!(money, currency, rate) do
     money
-    |> Money.to_currency!(to_currency, %{money.currency => Decimal.new(1), to_currency => rate})
+    |> Money.to_currency!(currency, %{money.currency => Decimal.new(1), currency => rate})
     |> Money.round(currency_digits: 7)
   end
 end

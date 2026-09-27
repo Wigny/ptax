@@ -31,7 +31,7 @@ iex> PTAX.exchange!(Money.new!(:USD, "100"), :BRL)
 %Money{}
 ```
 
-BCB publishes a bulletin only on business days, so the lookup walks back up to 7 days to find the most recent one.
+The bulletin comes out at 13:00 in São Paulo. Before that time the lookup reads the previous business day's bulletin, and it falls back one more business day when the expected bulletin is not available yet.
 
 ### Convert using the quotes for a specific date
 

@@ -5,6 +5,9 @@ defmodule PTAX.Rates do
   Every conversion reads its rate through this behaviour, resolved for the pair from the
   bulletin BCB published for the given date, or from the latest one.
 
+  A rate is how many units of the target currency one unit of the source currency buys, and the
+  rate for the opposite direction is not its reciprocal.
+
   Each direction reads the side of the spread matching it, because BCB publishes a separate bid
   and ask for every currency.
   """
@@ -21,9 +24,6 @@ defmodule PTAX.Rates do
   @doc """
   Returns the rate converting `from_currency` into `to_currency` on `date`, or
   `{:error, exception}` if no rate is available for the pair.
-
-  The rate is how many units of `to_currency` one unit of `from_currency` buys, and the rate for
-  the opposite direction is not its reciprocal.
   """
   @callback rate(
               from_currency :: Localize.Currency.currency_code(),
