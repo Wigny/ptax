@@ -66,6 +66,24 @@ iex> PTAX.exchange(Money.new!(:USD, "100"), :ZWL, ~D[2026-07-31])
 
 Once BCB publishes a bulletin it never changes, so each one is downloaded once and cached on disk. A bulletin that cannot be written or read is fetched from BCB instead.
 
+## Command line
+
+`:ptax` also ships as an escript. Install it with [`mix escript.install`](https://hexdocs.pm/mix/Mix.Tasks.Escript.Install.html):
+
+```console
+$ mix escript.install hex ptax
+```
+
+Pass the amount, the source currency and the target currency, and optionally the date of the bulletin to use:
+
+```console
+$ ptax 50 GBP BRL --date 2026-07-31
+R$ 341,82
+
+$ ptax 100 BRL USD
+US$ 19,70
+```
+
 ## Testing
 
 `PTAX` reads quotes through the `PTAX.Rates` behaviour. Point `:ptax, :rates` at a stub implementing it and a test suite serves known rates instead of reaching BCB.

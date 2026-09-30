@@ -22,3 +22,6 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 ptax-*.tar
 
+# Ignore the escript (built via "mix escript.build").
+/ptax
+

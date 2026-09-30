@@ -69,7 +69,7 @@ defmodule PTAX do
   ## Examples
 
       iex> PTAX.exchange(Money.new!(:GBP, "50"), :BRL, ~D[2026-07-31])
-      {:ok, Money.new(:BRL, "341.8150000")}
+      {:ok, Money.new(:BRL, Decimal.new("341.8150000"))}
 
       iex> PTAX.exchange(Money.new!(:BRL, "100"), :ZWL, ~D[2026-07-31])
       {:error, %PTAX.CurrencyNotQuotedError{currency: :ZWL}}
@@ -94,7 +94,7 @@ defmodule PTAX do
   ## Examples
 
       iex> PTAX.exchange!(Money.new!(:GBP, "50"), :BRL, ~D[2026-07-31])
-      Money.new(:BRL, "341.8150000")
+      Money.new(:BRL, Decimal.new("341.8150000"))
 
       iex> PTAX.exchange!(Money.new!(:BRL, "100"), :ZWL, ~D[2026-07-31])
       ** (PTAX.CurrencyNotQuotedError) PTAX does not quote :ZWL

@@ -15,6 +15,7 @@ defmodule PTAX.MixProject do
       description: description(),
       package: package(),
       docs: docs(),
+      escript: escript(),
       deps: deps()
     ]
   end
@@ -24,6 +25,7 @@ defmodule PTAX.MixProject do
 
   defp deps do
     [
+      {:localize, github: "elixir-localize/localize", ref: "e2db004", override: true},
       {:ex_money, "~> 6.2"},
       {:decimal, "~> 3.1"},
       {:req, "~> 0.7"},
@@ -32,6 +34,10 @@ defmodule PTAX.MixProject do
       {:plug, "~> 1.20", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
+  end
+
+  defp escript do
+    [main_module: PTAX.CLI, include_priv_for: [:localize]]
   end
 
   defp description do
