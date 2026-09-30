@@ -27,7 +27,7 @@ defmodule PTAX.MixProject do
       {:ex_money, "~> 6.2"},
       {:decimal, "~> 3.1"},
       {:req, "~> 0.7"},
-      {:tzdata, "~> 1.2"},
+      {:tz, "~> 0.28"},
       {:dayoff, "~> 0.2"},
       {:plug, "~> 1.20", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}

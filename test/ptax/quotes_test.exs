@@ -10,28 +10,28 @@ defmodule PTAX.QuotesTest do
   describe "publish_dates/1" do
     test "starts from the previous day before the closing bulletin time" do
       from =
-        DateTime.new!(~D[2026-09-23], ~T[12:59:59], "America/Sao_Paulo", Tzdata.TimeZoneDatabase)
+        DateTime.new!(~D[2026-09-23], ~T[12:59:59], "America/Sao_Paulo", Tz.TimeZoneDatabase)
 
       assert Enum.take(Quotes.publish_dates(from), 2) == [~D[2026-09-22], ~D[2026-09-21]]
     end
 
     test "starts from the same day at the closing bulletin time" do
       from =
-        DateTime.new!(~D[2026-09-23], ~T[13:00:00], "America/Sao_Paulo", Tzdata.TimeZoneDatabase)
+        DateTime.new!(~D[2026-09-23], ~T[13:00:00], "America/Sao_Paulo", Tz.TimeZoneDatabase)
 
       assert Enum.take(Quotes.publish_dates(from), 2) == [~D[2026-09-23], ~D[2026-09-22]]
     end
 
     test "skips weekends" do
       from =
-        DateTime.new!(~D[2026-09-28], ~T[13:00:00], "America/Sao_Paulo", Tzdata.TimeZoneDatabase)
+        DateTime.new!(~D[2026-09-28], ~T[13:00:00], "America/Sao_Paulo", Tz.TimeZoneDatabase)
 
       assert Enum.take(Quotes.publish_dates(from), 2) == [~D[2026-09-28], ~D[2026-09-25]]
     end
 
     test "skips Brazilian holidays" do
       from =
-        DateTime.new!(~D[2026-04-22], ~T[13:00:00], "America/Sao_Paulo", Tzdata.TimeZoneDatabase)
+        DateTime.new!(~D[2026-04-22], ~T[13:00:00], "America/Sao_Paulo", Tz.TimeZoneDatabase)
 
       assert Enum.take(Quotes.publish_dates(from), 2) == [~D[2026-04-22], ~D[2026-04-20]]
     end

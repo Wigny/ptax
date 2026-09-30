@@ -144,7 +144,7 @@ defmodule PTAX.RatesTest do
 
   defp latest_publish_date do
     "America/Sao_Paulo"
-    |> DateTime.now!(Tzdata.TimeZoneDatabase)
+    |> DateTime.now!(Tz.TimeZoneDatabase)
     |> PTAX.Quotes.publish_dates()
     |> Enum.take(1)
     |> List.first()

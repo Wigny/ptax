@@ -35,7 +35,7 @@ defmodule PTAX.Rates do
 
   @impl true
   def rate(from_currency, to_currency) do
-    now = DateTime.now!("America/Sao_Paulo", Tzdata.TimeZoneDatabase)
+    now = DateTime.now!("America/Sao_Paulo", Tz.TimeZoneDatabase)
     [latest_date, previous_date] = Enum.take(PTAX.Quotes.publish_dates(now), 2)
 
     with {:error, %PTAX.QuotesNotFoundError{}} <- rate(from_currency, to_currency, latest_date),
