@@ -109,6 +109,16 @@ defmodule PTAX.QuotesTest do
       assert quotes[:USD].bid == Decimal.new("5.00000000")
     end
 
+    test "keeps the cached file intact when serving from cache", %{tmp_dir: tmp_dir} do
+      path = Path.join(tmp_dir, "20260730.csv")
+
+      File.write!(path, "30/07/2026;220;A;USD;5,00000000;5,10000000;1,00000000;1,00000000")
+      %{inode: inode} = File.stat!(path)
+
+      assert {:ok, _quotes} = Quotes.fetch(~D[2026-07-30])
+      assert %{inode: ^inode} = File.stat!(path)
+    end
+
     test "serves the bulletin when it cannot be cached", %{tmp_dir: tmp_dir} do
       File.chmod!(tmp_dir, 0o555)
       on_exit(fn -> File.chmod!(tmp_dir, 0o755) end)

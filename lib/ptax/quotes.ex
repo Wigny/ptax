@@ -62,12 +62,24 @@ defmodule PTAX.Quotes do
 
   defp read_from_cache(request) do
     case File.read(filepath(request)) do
-      {:ok, content} -> {request, Req.Response.new(status: 200, body: content)}
-      {:error, _reason} -> request
+      {:ok, content} ->
+        response =
+          [status: 200, body: content]
+          |> Req.Response.new()
+          |> Req.Response.put_private(:cached, true)
+
+        {request, response}
+
+      {:error, _reason} ->
+        request
     end
   end
 
   defp save_to_cache({%{options: %{cache_dir: nil}}, _response} = result) do
+    result
+  end
+
+  defp save_to_cache({_request, %{private: %{cached: true}}} = result) do
     result
   end
 
