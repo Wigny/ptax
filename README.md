@@ -74,13 +74,16 @@ Once BCB publishes a bulletin it never changes, so each one is downloaded once a
 $ mix escript.install hex ptax
 ```
 
-Pass the amount, the source currency and the target currency, and optionally the date of the bulletin to use:
+Pass the amount with its currency, as a code or a symbol. The result is in BRL unless `--to` names another currency, and `--date` picks the bulletin to use:
 
 ```console
-$ ptax 50 GBP BRL --date 2026-07-31
+$ ptax 50 GBP --date 2026-07-31
 R$ 341,82
 
-$ ptax 100 BRL USD
+$ ptax "US$ 100"
+R$ 507,67
+
+$ ptax 100 BRL --to USD
 US$ 19,70
 ```
 
