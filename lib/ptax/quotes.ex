@@ -19,7 +19,7 @@ defmodule PTAX.Quotes do
     |> Date.add((before_publish? && -1) || 0)
     |> Stream.iterate(&Date.add(&1, -1))
     |> Stream.reject(&(Date.day_of_week(&1) > 5))
-    |> Stream.reject(&Dayoff.holiday?(&1, "BR", types: [:public, :bank]))
+    |> Stream.reject(&PTAX.Holidays.holiday?/1)
   end
 
   @spec fetch(Date.t()) :: {:ok, %{atom => quotation}} | {:error, Exception.t()}
