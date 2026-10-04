@@ -30,7 +30,7 @@ defmodule PTAX.MixProject do
       {:decimal, "~> 3.1"},
       {:req, "~> 0.7"},
       {:tz, "~> 0.28"},
-      {:spreadsheet, "~> 0.6", runtime: false},
+      {:spreadsheet, "~> 0.6", only: :test},
       {:plug, "~> 1.20", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]

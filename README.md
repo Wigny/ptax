@@ -31,7 +31,7 @@ iex> PTAX.exchange!(Money.new!(:USD, "100"), :BRL)
 %Money{}
 ```
 
-The bulletin comes out at 13:00 in São Paulo. Before that time the lookup reads the previous business day's bulletin, and it falls back one more business day when the expected bulletin is not available yet. Business days skip weekends and the national holidays published by [ANBIMA](https://www.anbima.com.br/feriados/feriados.asp).
+The bulletin comes out at 13:00 in São Paulo. Before that time the lookup reads the previous business day's bulletin, and it falls back one more business day when the expected bulletin is not available yet. Business days skip weekends and the Brazilian national bank holidays, the same calendar that [ANBIMA](https://www.anbima.com.br/feriados/feriados.asp) publishes.
 
 ### Convert using the quotes for a specific date
 
