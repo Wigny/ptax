@@ -46,17 +46,17 @@ defmodule PTAX.Rates do
   @impl true
   def rate(from_currency, to_currency, date) do
     with {:ok, quotes} <- PTAX.Quotes.fetch(date),
-         {:ok, from_quotation} <- fetch_quotation(quotes, from_currency),
-         {:ok, to_quotation} <- fetch_quotation(quotes, to_currency) do
-      {:ok, quoted_rate({from_currency, from_quotation}, {to_currency, to_quotation})}
+         {:ok, from_quote} <- fetch_quote(quotes, from_currency),
+         {:ok, to_quote} <- fetch_quote(quotes, to_currency) do
+      {:ok, quoted_rate({from_currency, from_quote}, {to_currency, to_quote})}
     end
   end
 
-  defp fetch_quotation(_quotes, :BRL), do: {:ok, nil}
+  defp fetch_quote(_quotes, :BRL), do: {:ok, nil}
 
-  defp fetch_quotation(quotes, currency) do
+  defp fetch_quote(quotes, currency) do
     case quotes do
-      %{^currency => quotation} -> {:ok, quotation}
+      %{^currency => quote} -> {:ok, quote}
       _quotes -> {:error, PTAX.CurrencyNotQuotedError.exception(currency: currency)}
     end
   end
