@@ -25,12 +25,12 @@ defmodule PTAX.MixProject do
 
   defp deps do
     [
-      {:localize, github: "elixir-localize/localize", ref: "e2db004", override: true},
-      {:ex_money, "~> 6.2"},
-      {:decimal, "~> 3.1"},
+      {:localize, "~> 1.5"},
+      {:ex_money, "~> 6.3"},
+      {:decimal, "~> 3.2"},
       {:req, "~> 0.7"},
       {:tz, "~> 0.28"},
-      {:spreadsheet, "~> 0.6", only: :test},
+      {:spreadsheet, "~> 0.7", only: :test},
       {:plug, "~> 1.20", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
