@@ -47,7 +47,8 @@ defmodule PTAX.MixProject do
   defp package do
     [
       licenses: ["Apache-2.0"],
-      links: %{"GitHub" => @source_url}
+      links: %{"GitHub" => @source_url},
+      files: ~w(lib config mix.exs README.md .formatter.exs)
     ]
   end
 
